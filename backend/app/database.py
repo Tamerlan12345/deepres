@@ -2,7 +2,17 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.config import settings
 
-engine = create_async_engine(settings.DATABASE_URL, echo=True)
+# --- FIX START ---
+# Автоматическая замена драйвера на асинхронный (asyncpg), 
+# если платформа передала стандартный URL.
+database_url = settings.DATABASE_URL
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif database_url.startswith("postgresql://") and "asyncpg" not in database_url:
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+# --- FIX END ---
+
+engine = create_async_engine(database_url, echo=True)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()
 
