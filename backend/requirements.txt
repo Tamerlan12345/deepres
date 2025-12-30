@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy
+asyncpg
+pydantic
+pydantic-settings
+google-generativeai
+weasyprint
+openpyxl
+python-multipart
+httpx
+alembic
+psycopg2-binary
+reportlab
