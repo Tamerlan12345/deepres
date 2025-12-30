@@ -1,19 +1,20 @@
 # Dockerfile for Railway to run both backend and frontend (for simplicity in Monorepo without multiple services)
 # In a real scenario, you might want two separate services.
 # Here we will use a multi-stage build or just a python image that also installs node.
-
-FROM python:3.11-slim
+# RECOMENDATION: Use slim-bookworm to pin to a stable Debian version
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
 # Install system dependencies
+# FIX: Changed libgdk-pixbuf2.0-0 to libgdk-pixbuf-2.0-0
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     libcairo2 \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-2.0-0 \
     libffi-dev \
     shared-mime-info \
     curl \
