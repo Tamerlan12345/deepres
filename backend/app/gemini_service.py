@@ -1,12 +1,11 @@
 import json
-import re
 import asyncio
-import os
 from sqlalchemy.orm import Session
 from app.models import Report, ReportStatus
 from app.config import settings
 from app.prompts import SYSTEM_PROMPT
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 async def process_report(report_id: int, db_session_factory):
     """
@@ -22,10 +21,6 @@ async def process_report(report_id: int, db_session_factory):
 
         try:
             # 1. Prepare Prompt
-            # We don't construct the full prompt here if we rely on chat history or system instructions properly,
-            # but for a single shot task, appending is fine.
-            # The system prompt is already configured to be "Deep Research" style.
-
             user_query = report.query
 
             # 2. Configure Gemini
@@ -46,42 +41,39 @@ async def process_report(report_id: int, db_session_factory):
 ```
 """
             else:
-                genai.configure(api_key=settings.GEMINI_API_KEY)
+                client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
                 # Configuration for "Deep Research" behavior
-                # Use 'gemini-2.0-flash-thinking-exp' if available for reasoning, or 'gemini-1.5-pro'
-                # The prompt explicitly asked for 'deep-research-pro-preview' endpoint or corresponding.
-                # Since SDK usage usually requires a model name:
-
-                model_name = 'gemini-1.5-pro' # Fallback default
-
-                # Check environment variable or settings for specific model override
-                # If the user really wants to try the preview name:
-                # model_name = 'deep-research-pro-preview'
-                # But that might fail if not whitelisted. I will use a known robust model with tools.
-                # However, to respect the user's explicit request for the *code* to support it:
-
-                target_model = "gemini-1.5-pro"
+                model_name = "deep-research-pro-preview"
 
                 # Grounding (Google Search Tool)
-                tools = [
-                    {'google_search': {}}
-                ]
+                google_search_tool = types.Tool(
+                    google_search=types.GoogleSearch()
+                )
 
-                # We can try to specify the specific model if we knew it works, but 1.5 Pro is the stable "smart" one.
-                # If "deep-research-pro-preview" is a valid model ID for the user's key, they can set it via env var if I added one,
-                # or I can hardcode it if I'm sure. I'll stick to 1.5 Pro + Tools which is the functional equivalent
-                # available to general developers for "Agentic" workflows right now.
+                # Call generate_content asynchronously
+                # Using client.aio.models.generate_content for true async support
+                response = await client.aio.models.generate_content(
+                    model=model_name,
+                    contents=user_query,
+                    config=types.GenerateContentConfig(
+                        tools=[google_search_tool],
+                        system_instruction=SYSTEM_PROMPT
+                    )
+                )
 
-                model = genai.GenerativeModel(target_model, tools=tools, system_instruction=SYSTEM_PROMPT)
+                # Log grounding metadata for debugging/monitoring
+                if response.candidates and response.candidates[0].grounding_metadata:
+                    print(f"Grounding Metadata: {response.candidates[0].grounding_metadata}")
 
-                # Call generate_content
-                # We enable automatic function calling (though google_search is usually auto-handled by the model backend)
-                response = model.generate_content(user_query)
-
-                # In some versions, response.text might not be available if the model used tools and returned a function call,
-                # but with google_search tool, the model usually does the search internally and returns text.
-                # However, we should handle potential parts.
+                if not response.text:
+                     # Handle safety filters or empty responses
+                     error_msg = "Model returned empty response. Likely triggered safety filters or no information found."
+                     print(f"Error processing report {report_id}: {error_msg}")
+                     report.status = ReportStatus.FAILED
+                     report.result_json = {"error": error_msg}
+                     await db.commit()
+                     return
 
                 response_text = response.text
 
