@@ -41,7 +41,10 @@ async def process_report(report_id: int, db_session_factory):
 ```
 """
             else:
-                client = genai.Client(api_key=settings.GEMINI_API_KEY)
+                client = genai.Client(
+                    api_key=settings.GEMINI_API_KEY,
+                    http_options=types.HttpOptions(api_version='v1alpha')
+                )
 
                 # Configuration for "Deep Research" behavior
                 model_name = "deep-research-pro-preview"
