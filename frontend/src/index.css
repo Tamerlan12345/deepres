@@ -2,7 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    background-color: #f3f4f6;
-    color: #1f2937;
+@layer base {
+  body {
+    @apply bg-brand-100 text-brand-900 antialiased;
+  }
+
+  /* Scrollbar styling for corporate look */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-brand-100;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-brand-300 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-400;
+  }
+}
+
+/* Button component in corporate style */
+@layer components {
+  .btn-primary {
+    @apply bg-accent text-white px-4 py-2 rounded-md font-medium transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2;
+  }
+
+  .card {
+    @apply bg-white rounded-lg border border-brand-200 shadow-card p-6;
+  }
 }
