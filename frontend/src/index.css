@@ -4,31 +4,70 @@
 
 @layer base {
   body {
-    @apply bg-brand-100 text-brand-900 antialiased;
+    @apply bg-brand-950 text-brand-100 antialiased h-screen overflow-hidden;
   }
 
-  /* Scrollbar styling for corporate look */
+  /* Custom Scrollbar for Dark Mode */
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-brand-100;
+    @apply bg-brand-950;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-brand-300 rounded-full;
+    @apply bg-brand-700 rounded-full;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-brand-400;
+    @apply bg-brand-600;
   }
 }
 
-/* Button component in corporate style */
 @layer components {
+  /* Modern Button Styles */
   .btn-primary {
-    @apply bg-accent text-white px-4 py-2 rounded-md font-medium transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2;
+    @apply bg-accent text-white px-5 py-2.5 rounded-lg font-semibold tracking-wide transition-all duration-200
+    hover:bg-accent-hover hover:shadow-glow focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-brand-950;
   }
 
+  .btn-secondary {
+    @apply bg-brand-800 text-brand-200 px-4 py-2 rounded-lg font-medium transition-colors border border-brand-700
+    hover:bg-brand-700 hover:text-white focus:outline-none;
+  }
+
+  /* Glassmorphism Card */
   .card {
-    @apply bg-white rounded-lg border border-brand-200 shadow-card p-6;
+    @apply bg-brand-900/80 backdrop-blur-sm border border-brand-800 rounded-xl shadow-card p-6;
+  }
+
+  /* Input Fields */
+  .input-field {
+    @apply bg-brand-900 border border-brand-700 text-brand-100 rounded-lg p-4 w-full
+    focus:ring-2 focus:ring-accent focus:border-transparent focus:outline-none placeholder-brand-500 transition-all;
+  }
+
+  /* Status Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-success { @apply bg-success-bg text-success border border-success/20; }
+  .badge-warning { @apply bg-warning-bg text-warning border border-warning/20; }
+  .badge-error { @apply bg-error-bg text-error border border-error/20; }
+  .badge-neutral { @apply bg-brand-800 text-brand-400 border border-brand-700; }
+}
+
+/* Animations */
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

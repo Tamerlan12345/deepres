@@ -47,7 +47,7 @@ async def process_report(report_id: int, db_session_factory):
                 )
 
                 # Configuration for "Deep Research" behavior
-                model_name = "deep-research-pro-preview"
+                model_name = "deep-research-pro-preview-12-2025"
 
                 # Grounding (Google Search Tool)
                 google_search_tool = types.Tool(
