@@ -1,0 +1,214 @@
+/app/backend/app/gemini_service.py:9: FutureWarning:
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [3791]
+INFO:     Waiting for application startup.
+2025-12-30 18:47:33,547 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 18:47:33,547 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reports")
+2025-12-30 18:47:33,548 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-12-30 18:47:33,549 INFO sqlalchemy.engine.Engine PRAGMA temp.table_info("reports")
+2025-12-30 18:47:33,549 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-12-30 18:47:33,550 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2025-12-30 18:47:33,550 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-12-30 18:47:33,551 INFO sqlalchemy.engine.Engine PRAGMA temp.table_info("users")
+2025-12-30 18:47:33,551 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-12-30 18:47:33,553 INFO sqlalchemy.engine.Engine
+CREATE TABLE reports (
+	id INTEGER NOT NULL,
+	"query" TEXT NOT NULL,
+	status VARCHAR,
+	result_json JSON,
+	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	updated_at DATETIME,
+	PRIMARY KEY (id)
+)
+
+
+2025-12-30 18:47:33,553 INFO sqlalchemy.engine.Engine [no key 0.00012s] ()
+2025-12-30 18:47:33,556 INFO sqlalchemy.engine.Engine CREATE INDEX ix_reports_id ON reports (id)
+2025-12-30 18:47:33,556 INFO sqlalchemy.engine.Engine [no key 0.00011s] ()
+2025-12-30 18:47:33,559 INFO sqlalchemy.engine.Engine
+CREATE TABLE users (
+	id INTEGER NOT NULL,
+	username VARCHAR,
+	hashed_password VARCHAR,
+	PRIMARY KEY (id)
+)
+
+
+2025-12-30 18:47:33,559 INFO sqlalchemy.engine.Engine [no key 0.00017s] ()
+2025-12-30 18:47:33,562 INFO sqlalchemy.engine.Engine CREATE INDEX ix_users_id ON users (id)
+2025-12-30 18:47:33,562 INFO sqlalchemy.engine.Engine [no key 0.00011s] ()
+2025-12-30 18:47:33,564 INFO sqlalchemy.engine.Engine CREATE UNIQUE INDEX ix_users_username ON users (username)
+2025-12-30 18:47:33,564 INFO sqlalchemy.engine.Engine [no key 0.00015s] ()
+2025-12-30 18:47:33,567 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+2025-12-30 18:47:42,426 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 18:47:42,428 INFO sqlalchemy.engine.Engine INSERT INTO reports ("query", status, updated_at) VALUES (?, ?, ?) RETURNING id, created_at
+2025-12-30 18:47:42,428 INFO sqlalchemy.engine.Engine [generated in 0.00031s] ('Test query', <ReportStatus.PENDING: 'PENDING'>, None)
+2025-12-30 18:47:42,431 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 18:47:42,436 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 18:47:42,438 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.result_json, reports.created_at, reports.updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 18:47:42,439 INFO sqlalchemy.engine.Engine [generated in 0.00020s] (1,)
+INFO:     127.0.0.1:41878 - "POST /api/reports HTTP/1.1" 200 OK
+2025-12-30 18:47:42,444 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 18:47:42,445 INFO sqlalchemy.engine.Engine SELECT reports.id AS reports_id, reports."query" AS reports_query, reports.status AS reports_status, reports.result_json AS reports_result_json, reports.created_at AS reports_created_at, reports.updated_at AS reports_updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 18:47:42,445 INFO sqlalchemy.engine.Engine [generated in 0.00019s] (1,)
+2025-12-30 18:47:42,449 INFO sqlalchemy.engine.Engine UPDATE reports SET status=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2025-12-30 18:47:42,449 INFO sqlalchemy.engine.Engine [generated in 0.00020s] (<ReportStatus.PROCESSING: 'PROCESSING'>, 1)
+2025-12-30 18:47:42,450 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 18:47:45,454 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 18:47:45,455 INFO sqlalchemy.engine.Engine UPDATE reports SET status=?, result_json=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2025-12-30 18:47:45,455 INFO sqlalchemy.engine.Engine [generated in 0.00029s] (<ReportStatus.COMPLETED: 'COMPLETED'>, '{"summary": "MOCK RESULT: Deep Research simulated. Freedom Finance is aggressively expanding in auto insurance.", "key_metrics": [{"label": "Simulate ... (213 characters truncated) ... \n1. **Step 1**: Analyzed query.\\n2. **Step 2**: \'Searched\' Google.\\n3. **Step 3**: Synthesized results.", "sources": ["http://mock-source.com"]}', 1)
+2025-12-30 18:47:45,457 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 18:47:45,460 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 18:47:46,801 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 18:47:46,802 INFO sqlalchemy.engine.Engine SELECT reports.id AS reports_id, reports."query" AS reports_query, reports.status AS reports_status, reports.result_json AS reports_result_json, reports.created_at AS reports_created_at, reports.updated_at AS reports_updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 18:47:46,802 INFO sqlalchemy.engine.Engine [cached since 4.357s ago] (1,)
+INFO:     127.0.0.1:41880 - "GET /api/reports/1 HTTP/1.1" 200 OK
+2025-12-30 18:47:46,804 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 19:10:08,404 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 19:10:08,433 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.result_json, reports.created_at, reports.updated_at
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2025-12-30 19:10:08,434 INFO sqlalchemy.engine.Engine [generated in 0.00142s] (20, 0)
+INFO:     127.0.0.1:60292 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2025-12-30 19:10:08,446 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 19:10:08,466 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 19:10:08,466 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.result_json, reports.created_at, reports.updated_at
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2025-12-30 19:10:08,466 INFO sqlalchemy.engine.Engine [cached since 0.03408s ago] (20, 0)
+INFO:     127.0.0.1:60296 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2025-12-30 19:10:08,469 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 19:10:08,775 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 19:10:08,777 INFO sqlalchemy.engine.Engine INSERT INTO reports ("query", status, updated_at) VALUES (?, ?, ?) RETURNING id, created_at
+2025-12-30 19:10:08,777 INFO sqlalchemy.engine.Engine [cached since 1346s ago] ('Test Playwright Query', <ReportStatus.PENDING: 'PENDING'>, None)
+2025-12-30 19:10:08,780 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 19:10:08,785 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 19:10:08,785 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.result_json, reports.created_at, reports.updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 19:10:08,785 INFO sqlalchemy.engine.Engine [cached since 1346s ago] (2,)
+INFO:     127.0.0.1:60312 - "POST /api/reports HTTP/1.1" 200 OK
+2025-12-30 19:10:08,789 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 19:10:08,789 INFO sqlalchemy.engine.Engine SELECT reports.id AS reports_id, reports."query" AS reports_query, reports.status AS reports_status, reports.result_json AS reports_result_json, reports.created_at AS reports_created_at, reports.updated_at AS reports_updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 19:10:08,789 INFO sqlalchemy.engine.Engine [cached since 1346s ago] (2,)
+2025-12-30 19:10:08,791 INFO sqlalchemy.engine.Engine UPDATE reports SET status=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2025-12-30 19:10:08,792 INFO sqlalchemy.engine.Engine [cached since 1346s ago] (<ReportStatus.PROCESSING: 'PROCESSING'>, 2)
+2025-12-30 19:10:08,793 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 19:10:08,811 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 19:10:08,811 INFO sqlalchemy.engine.Engine SELECT reports.id AS reports_id, reports."query" AS reports_query, reports.status AS reports_status, reports.result_json AS reports_result_json, reports.created_at AS reports_created_at, reports.updated_at AS reports_updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 19:10:08,811 INFO sqlalchemy.engine.Engine [cached since 1346s ago] (2,)
+INFO:     127.0.0.1:60316 - "GET /api/reports/2 HTTP/1.1" 200 OK
+2025-12-30 19:10:08,813 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 19:10:11,796 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 19:10:11,797 INFO sqlalchemy.engine.Engine UPDATE reports SET status=?, result_json=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2025-12-30 19:10:11,797 INFO sqlalchemy.engine.Engine [cached since 1346s ago] (<ReportStatus.COMPLETED: 'COMPLETED'>, '{"summary": "MOCK RESULT: Deep Research simulated. Freedom Finance is aggressively expanding in auto insurance.", "key_metrics": [{"label": "Simulate ... (213 characters truncated) ... \n1. **Step 1**: Analyzed query.\\n2. **Step 2**: \'Searched\' Google.\\n3. **Step 3**: Synthesized results.", "sources": ["http://mock-source.com"]}', 2)
+2025-12-30 19:10:11,799 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 19:10:11,801 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 20:12:29,143 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:12:29,144 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.result_json, reports.created_at, reports.updated_at
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2025-12-30 20:12:29,144 INFO sqlalchemy.engine.Engine [cached since 3741s ago] (20, 0)
+INFO:     127.0.0.1:56046 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2025-12-30 20:12:29,149 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 20:12:29,155 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:12:29,155 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.result_json, reports.created_at, reports.updated_at
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2025-12-30 20:12:29,155 INFO sqlalchemy.engine.Engine [cached since 3741s ago] (20, 0)
+INFO:     127.0.0.1:56050 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2025-12-30 20:12:29,157 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 20:12:29,338 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:12:29,339 INFO sqlalchemy.engine.Engine INSERT INTO reports ("query", status, updated_at) VALUES (?, ?, ?) RETURNING id, created_at
+2025-12-30 20:12:29,339 INFO sqlalchemy.engine.Engine [cached since 5087s ago] ('Test Playwright Query', <ReportStatus.PENDING: 'PENDING'>, None)
+2025-12-30 20:12:29,341 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 20:12:29,344 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:12:29,345 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.result_json, reports.created_at, reports.updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 20:12:29,345 INFO sqlalchemy.engine.Engine [cached since 5087s ago] (3,)
+INFO:     127.0.0.1:56058 - "POST /api/reports HTTP/1.1" 200 OK
+2025-12-30 20:12:29,347 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:12:29,348 INFO sqlalchemy.engine.Engine SELECT reports.id AS reports_id, reports."query" AS reports_query, reports.status AS reports_status, reports.result_json AS reports_result_json, reports.created_at AS reports_created_at, reports.updated_at AS reports_updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 20:12:29,348 INFO sqlalchemy.engine.Engine [cached since 5087s ago] (3,)
+2025-12-30 20:12:29,350 INFO sqlalchemy.engine.Engine UPDATE reports SET status=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2025-12-30 20:12:29,350 INFO sqlalchemy.engine.Engine [cached since 5087s ago] (<ReportStatus.PROCESSING: 'PROCESSING'>, 3)
+2025-12-30 20:12:29,351 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 20:12:29,358 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:12:29,358 INFO sqlalchemy.engine.Engine SELECT reports.id AS reports_id, reports."query" AS reports_query, reports.status AS reports_status, reports.result_json AS reports_result_json, reports.created_at AS reports_created_at, reports.updated_at AS reports_updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 20:12:29,358 INFO sqlalchemy.engine.Engine [cached since 5087s ago] (3,)
+INFO:     127.0.0.1:56070 - "GET /api/reports/3 HTTP/1.1" 200 OK
+2025-12-30 20:12:29,361 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 20:12:32,354 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:12:32,355 INFO sqlalchemy.engine.Engine UPDATE reports SET status=?, result_json=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2025-12-30 20:12:32,355 INFO sqlalchemy.engine.Engine [cached since 5087s ago] (<ReportStatus.COMPLETED: 'COMPLETED'>, '{"summary": "MOCK RESULT: Deep Research simulated. Freedom Finance is aggressively expanding in auto insurance.", "key_metrics": [{"label": "Simulate ... (213 characters truncated) ... \n1. **Step 1**: Analyzed query.\\n2. **Step 2**: \'Searched\' Google.\\n3. **Step 3**: Synthesized results.", "sources": ["http://mock-source.com"]}', 3)
+2025-12-30 20:12:32,356 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 20:12:32,359 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 20:32:23,946 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:32:23,946 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.result_json, reports.created_at, reports.updated_at
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2025-12-30 20:32:23,947 INFO sqlalchemy.engine.Engine [cached since 4936s ago] (20, 0)
+INFO:     127.0.0.1:34978 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2025-12-30 20:32:23,949 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 20:32:23,954 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:32:23,955 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.result_json, reports.created_at, reports.updated_at
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2025-12-30 20:32:23,955 INFO sqlalchemy.engine.Engine [cached since 4936s ago] (20, 0)
+INFO:     127.0.0.1:34992 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2025-12-30 20:32:23,956 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 20:32:24,139 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:32:24,139 INFO sqlalchemy.engine.Engine INSERT INTO reports ("query", status, updated_at) VALUES (?, ?, ?) RETURNING id, created_at
+2025-12-30 20:32:24,140 INFO sqlalchemy.engine.Engine [cached since 6282s ago] ('Test Playwright Query', <ReportStatus.PENDING: 'PENDING'>, None)
+2025-12-30 20:32:24,142 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 20:32:24,145 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:32:24,145 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.result_json, reports.created_at, reports.updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 20:32:24,145 INFO sqlalchemy.engine.Engine [cached since 6282s ago] (4,)
+INFO:     127.0.0.1:35004 - "POST /api/reports HTTP/1.1" 200 OK
+2025-12-30 20:32:24,147 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:32:24,147 INFO sqlalchemy.engine.Engine SELECT reports.id AS reports_id, reports."query" AS reports_query, reports.status AS reports_status, reports.result_json AS reports_result_json, reports.created_at AS reports_created_at, reports.updated_at AS reports_updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 20:32:24,148 INFO sqlalchemy.engine.Engine [cached since 6282s ago] (4,)
+2025-12-30 20:32:24,149 INFO sqlalchemy.engine.Engine UPDATE reports SET status=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2025-12-30 20:32:24,149 INFO sqlalchemy.engine.Engine [cached since 6282s ago] (<ReportStatus.PROCESSING: 'PROCESSING'>, 4)
+2025-12-30 20:32:24,150 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 20:32:24,158 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:32:24,158 INFO sqlalchemy.engine.Engine SELECT reports.id AS reports_id, reports."query" AS reports_query, reports.status AS reports_status, reports.result_json AS reports_result_json, reports.created_at AS reports_created_at, reports.updated_at AS reports_updated_at
+FROM reports
+WHERE reports.id = ?
+2025-12-30 20:32:24,158 INFO sqlalchemy.engine.Engine [cached since 6282s ago] (4,)
+INFO:     127.0.0.1:35018 - "GET /api/reports/4 HTTP/1.1" 200 OK
+2025-12-30 20:32:24,159 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-12-30 20:32:27,153 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-12-30 20:32:27,154 INFO sqlalchemy.engine.Engine UPDATE reports SET status=?, result_json=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2025-12-30 20:32:27,154 INFO sqlalchemy.engine.Engine [cached since 6282s ago] (<ReportStatus.COMPLETED: 'COMPLETED'>, '{"summary": "MOCK RESULT: Deep Research simulated. Freedom Finance is aggressively expanding in auto insurance.", "key_metrics": [{"label": "Simulate ... (213 characters truncated) ... \n1. **Step 1**: Analyzed query.\\n2. **Step 2**: \'Searched\' Google.\\n3. **Step 3**: Synthesized results.", "sources": ["http://mock-source.com"]}', 4)
+2025-12-30 20:32:27,155 INFO sqlalchemy.engine.Engine COMMIT
+2025-12-30 20:32:27,158 INFO sqlalchemy.engine.Engine ROLLBACK
