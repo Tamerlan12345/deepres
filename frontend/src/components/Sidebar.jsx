@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { MessageSquare, BarChart2, FileText } from 'lucide-react';
+import { MessageSquare, BarChart2, Search, Zap, Clock, ChevronRight } from 'lucide-react';
 
 const Sidebar = ({ onSelectReport }) => {
   const [history, setHistory] = useState([]);
+  const [activeId, setActiveId] = useState(null);
 
   useEffect(() => {
     fetchHistory();
-    const interval = setInterval(fetchHistory, 10000); // Poll for updates
+    const interval = setInterval(fetchHistory, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -20,27 +21,74 @@ const Sidebar = ({ onSelectReport }) => {
     }
   };
 
+  const handleSelect = (id) => {
+    setActiveId(id);
+    onSelectReport(id);
+  };
+
   return (
-    <div className="w-64 bg-brand-900 text-white flex flex-col h-full shadow-lg">
-      <div className="p-4 border-b border-brand-700 flex items-center space-x-2">
-        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-brand-900 font-bold">C</div>
-        <h1 className="font-bold text-lg">Centras AI</h1>
+    <div className="w-72 bg-brand-900 border-r border-brand-800 flex flex-col h-full shadow-2xl z-20">
+      {/* Header */}
+      <div className="p-6 border-b border-brand-800 flex items-center space-x-3 bg-gradient-to-r from-brand-900 to-brand-950">
+        <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center text-white font-bold shadow-glow">
+          <Zap size={20} fill="white" />
+        </div>
+        <div>
+          <h1 className="font-bold text-xl text-white tracking-tight">Centras AI</h1>
+          <p className="text-xs text-brand-400 font-mono tracking-wider">STRATEGIC AGENT</p>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2">
-        <h2 className="text-xs uppercase text-brand-500 font-semibold mb-2 px-2">History</h2>
-        <ul>
-          {history.map((report) => (
-            <li
-              key={report.id}
-              onClick={() => onSelectReport(report.id)}
-              className="p-2 hover:bg-brand-800 rounded cursor-pointer text-sm truncate flex items-center space-x-2 text-brand-100"
-            >
-              {report.status === 'COMPLETED' ? <BarChart2 size={14} className="text-green-400" /> : <MessageSquare size={14} className="text-yellow-400" />}
-              <span className="truncate">{report.query}</span>
-            </li>
-          ))}
-        </ul>
+      {/* Navigation / History */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+        <div>
+          <h2 className="text-xs uppercase text-brand-500 font-bold tracking-widest mb-3 px-2 flex items-center gap-2">
+            <Clock size={12} /> Recent Analysis
+          </h2>
+          <ul className="space-y-1">
+            {history.map((report) => (
+              <li
+                key={report.id}
+                onClick={() => handleSelect(report.id)}
+                className={`
+                  group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 border border-transparent
+                  ${activeId === report.id
+                    ? 'bg-brand-800 border-brand-700 shadow-md text-white'
+                    : 'text-brand-400 hover:bg-brand-800/50 hover:text-brand-200'}
+                `}
+              >
+                <div className="flex items-center space-x-3 overflow-hidden">
+                  {report.status === 'COMPLETED' ? (
+                    <BarChart2 size={16} className={activeId === report.id ? 'text-accent' : 'text-brand-600 group-hover:text-accent transition-colors'} />
+                  ) : (
+                    <div className="relative">
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-accent rounded-full animate-ping"></span>
+                      <Search size={16} className="text-brand-500 group-hover:text-brand-300" />
+                    </div>
+                  )}
+                  <span className="truncate text-sm font-medium">{report.query}</span>
+                </div>
+                {activeId === report.id && <ChevronRight size={14} className="text-accent" />}
+              </li>
+            ))}
+            {history.length === 0 && (
+                <li className="p-4 text-center text-brand-600 text-sm italic">
+                    No history found. Start a new search.
+                </li>
+            )}
+          </ul>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-brand-800 bg-brand-900">
+        <div className="bg-brand-800/50 rounded-lg p-3 border border-brand-700">
+            <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-mono text-brand-300">System Online</span>
+            </div>
+            <p className="text-[10px] text-brand-500">Gemini 2.0 Flash Exp • V1.0.4</p>
+        </div>
       </div>
     </div>
   );
