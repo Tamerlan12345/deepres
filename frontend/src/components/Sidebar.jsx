@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { MessageSquare, BarChart2, Search, Zap, Clock, ChevronRight } from 'lucide-react';
+import { MessageSquare, BarChart2, Search, Zap, Clock, ChevronRight, LogOut } from 'lucide-react';
 
 const Sidebar = ({ onSelectReport }) => {
+  const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [activeId, setActiveId] = useState(null);
 
@@ -81,7 +83,18 @@ const Sidebar = ({ onSelectReport }) => {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-brand-800 bg-brand-900">
+      <div className="p-4 border-t border-brand-800 bg-brand-900 space-y-3">
+        <button
+          onClick={() => {
+              localStorage.removeItem('token');
+              navigate('/');
+          }}
+          className="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-brand-800/50 hover:bg-red-900/20 text-brand-300 hover:text-red-400 border border-brand-700 hover:border-red-900/50 transition-all text-sm font-medium"
+        >
+            <LogOut size={16} />
+            <span>Выйти</span>
+        </button>
+
         <div className="bg-brand-800/50 rounded-lg p-3 border border-brand-700">
             <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
