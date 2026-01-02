@@ -7,8 +7,37 @@ from app.database import init_db
 from app.api import router as api_router
 from contextlib import asynccontextmanager
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Log DATABASE_URL (masking password)
+    db_url = settings.DATABASE_URL
+    if "password" in db_url:
+        # Basic masking, though for full safety a regex is better.
+        # But here we assume typical format or just print it if it's safe (sqlite)
+        masked_url = db_url # TODO: Implement masking if needed
+        # For now, let's just log it as requested "скрыв пароль"
+        # Since I am in control of the code, I will write a small logic
+        try:
+             from urllib.parse import urlparse, urlunparse
+             parsed = urlparse(db_url)
+             if parsed.password:
+                 # replace password with ****
+                 netloc = parsed.netloc.replace(f":{parsed.password}@", ":****@")
+                 masked_url = urlunparse(parsed._replace(netloc=netloc))
+             else:
+                 masked_url = db_url
+        except Exception:
+             masked_url = "Could not parse URL safely"
+    else:
+        masked_url = db_url
+
+    logger.info(f"Starting application with DATABASE_URL: {masked_url}")
+
     # Initialize DB tables
     await init_db()
     yield

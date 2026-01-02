@@ -12,3 +12,4 @@ httpx
 alembic
 psycopg2-binary
 reportlab
+aiosqlite
