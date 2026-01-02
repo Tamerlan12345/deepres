@@ -1,0 +1,205 @@
+INFO:     Started server process [3436]
+INFO:     Waiting for application startup.
+INFO:app.main:Starting application with DATABASE_URL: sqlite+aiosqlite:///./test.db
+2026-01-02 16:23:05,936 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:05,937 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reports")
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("reports")
+2026-01-02 16:23:05,937 INFO sqlalchemy.engine.Engine [raw sql] ()
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+2026-01-02 16:23:05,938 INFO sqlalchemy.engine.Engine PRAGMA temp.table_info("reports")
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("reports")
+2026-01-02 16:23:05,938 INFO sqlalchemy.engine.Engine [raw sql] ()
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+2026-01-02 16:23:05,939 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("users")
+2026-01-02 16:23:05,939 INFO sqlalchemy.engine.Engine [raw sql] ()
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+2026-01-02 16:23:05,940 INFO sqlalchemy.engine.Engine PRAGMA temp.table_info("users")
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("users")
+2026-01-02 16:23:05,940 INFO sqlalchemy.engine.Engine [raw sql] ()
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+2026-01-02 16:23:05,941 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reports")
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("reports")
+2026-01-02 16:23:05,941 INFO sqlalchemy.engine.Engine [raw sql] ()
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+2026-01-02 16:23:05,942 INFO sqlalchemy.engine.Engine PRAGMA temp.table_info("reports")
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("reports")
+2026-01-02 16:23:05,942 INFO sqlalchemy.engine.Engine [raw sql] ()
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+2026-01-02 16:23:05,943 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("users")
+2026-01-02 16:23:05,943 INFO sqlalchemy.engine.Engine [raw sql] ()
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+2026-01-02 16:23:05,944 INFO sqlalchemy.engine.Engine PRAGMA temp.table_info("users")
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("users")
+2026-01-02 16:23:05,944 INFO sqlalchemy.engine.Engine [raw sql] ()
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+2026-01-02 16:23:05,946 INFO sqlalchemy.engine.Engine
+CREATE TABLE reports (
+	id INTEGER NOT NULL,
+	"query" TEXT NOT NULL,
+	status VARCHAR,
+	logs JSON,
+	result_json JSON,
+	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	updated_at DATETIME,
+	PRIMARY KEY (id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE reports (
+	id INTEGER NOT NULL,
+	"query" TEXT NOT NULL,
+	status VARCHAR,
+	logs JSON,
+	result_json JSON,
+	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	updated_at DATETIME,
+	PRIMARY KEY (id)
+)
+
+
+2026-01-02 16:23:05,946 INFO sqlalchemy.engine.Engine [no key 0.00014s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00014s] ()
+2026-01-02 16:23:05,951 INFO sqlalchemy.engine.Engine CREATE INDEX ix_reports_id ON reports (id)
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_reports_id ON reports (id)
+2026-01-02 16:23:05,951 INFO sqlalchemy.engine.Engine [no key 0.00014s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00014s] ()
+2026-01-02 16:23:05,955 INFO sqlalchemy.engine.Engine
+CREATE TABLE users (
+	id INTEGER NOT NULL,
+	username VARCHAR,
+	hashed_password VARCHAR,
+	PRIMARY KEY (id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE users (
+	id INTEGER NOT NULL,
+	username VARCHAR,
+	hashed_password VARCHAR,
+	PRIMARY KEY (id)
+)
+
+
+2026-01-02 16:23:05,955 INFO sqlalchemy.engine.Engine [no key 0.00013s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00013s] ()
+2026-01-02 16:23:05,958 INFO sqlalchemy.engine.Engine CREATE UNIQUE INDEX ix_users_username ON users (username)
+INFO:sqlalchemy.engine.Engine:CREATE UNIQUE INDEX ix_users_username ON users (username)
+2026-01-02 16:23:05,958 INFO sqlalchemy.engine.Engine [no key 0.00013s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00013s] ()
+2026-01-02 16:23:05,961 INFO sqlalchemy.engine.Engine CREATE INDEX ix_users_id ON users (id)
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_users_id ON users (id)
+2026-01-02 16:23:05,961 INFO sqlalchemy.engine.Engine [no key 0.00012s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00012s] ()
+2026-01-02 16:23:05,964 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:44454 - "POST /reports HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:44462 - "GET /reports HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53250 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53256 - "GET /docs HTTP/1.0" 200 OK
+INFO:     127.0.0.1:53260 - "GET /docs HTTP/1.1" 200 OK
+2026-01-02 16:23:37,902 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:37,905 INFO sqlalchemy.engine.Engine INSERT INTO reports ("query", status, logs, updated_at) VALUES (?, ?, ?, ?) RETURNING id, created_at
+INFO:sqlalchemy.engine.Engine:INSERT INTO reports ("query", status, logs, updated_at) VALUES (?, ?, ?, ?) RETURNING id, created_at
+2026-01-02 16:23:37,905 INFO sqlalchemy.engine.Engine [generated in 0.00030s] ('test query', <ReportStatus.PENDING: 'PENDING'>, '[]', None)
+INFO:sqlalchemy.engine.Engine:[generated in 0.00030s] ('test query', <ReportStatus.PENDING: 'PENDING'>, '[]', None)
+2026-01-02 16:23:37,907 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+2026-01-02 16:23:37,910 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:37,912 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at
+FROM reports
+WHERE reports.id = ?
+INFO:sqlalchemy.engine.Engine:SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at
+FROM reports
+WHERE reports.id = ?
+2026-01-02 16:23:37,913 INFO sqlalchemy.engine.Engine [generated in 0.00019s] (1,)
+INFO:sqlalchemy.engine.Engine:[generated in 0.00019s] (1,)
+INFO:     127.0.0.1:39870 - "POST /api/reports HTTP/1.1" 200 OK
+2026-01-02 16:23:37,916 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:37,917 INFO sqlalchemy.engine.Engine SELECT reports.id AS reports_id, reports."query" AS reports_query, reports.status AS reports_status, reports.logs AS reports_logs, reports.result_json AS reports_result_json, reports.created_at AS reports_created_at, reports.updated_at AS reports_updated_at
+FROM reports
+WHERE reports.id = ?
+INFO:sqlalchemy.engine.Engine:SELECT reports.id AS reports_id, reports."query" AS reports_query, reports.status AS reports_status, reports.logs AS reports_logs, reports.result_json AS reports_result_json, reports.created_at AS reports_created_at, reports.updated_at AS reports_updated_at
+FROM reports
+WHERE reports.id = ?
+2026-01-02 16:23:37,917 INFO sqlalchemy.engine.Engine [generated in 0.00017s] (1,)
+INFO:sqlalchemy.engine.Engine:[generated in 0.00017s] (1,)
+2026-01-02 16:23:37,921 INFO sqlalchemy.engine.Engine UPDATE reports SET status=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+INFO:sqlalchemy.engine.Engine:UPDATE reports SET status=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2026-01-02 16:23:37,921 INFO sqlalchemy.engine.Engine [generated in 0.00018s] (<ReportStatus.PROCESSING: 'PROCESSING'>, 1)
+INFO:sqlalchemy.engine.Engine:[generated in 0.00018s] (<ReportStatus.PROCESSING: 'PROCESSING'>, 1)
+2026-01-02 16:23:37,922 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+2026-01-02 16:23:37,924 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:37,925 INFO sqlalchemy.engine.Engine UPDATE reports SET logs=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+INFO:sqlalchemy.engine.Engine:UPDATE reports SET logs=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2026-01-02 16:23:37,925 INFO sqlalchemy.engine.Engine [generated in 0.00019s] ('[{"timestamp": "16:23:37", "message": "\\u041d\\u0430\\u0447\\u0438\\u043d\\u0430\\u044e \\u0430\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0437\\u0430\\u043f\\u0440\\u043e\\u0441\\u0430: test query", "stage": "starting"}]', 1)
+INFO:sqlalchemy.engine.Engine:[generated in 0.00019s] ('[{"timestamp": "16:23:37", "message": "\\u041d\\u0430\\u0447\\u0438\\u043d\\u0430\\u044e \\u0430\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0437\\u0430\\u043f\\u0440\\u043e\\u0441\\u0430: test query", "stage": "starting"}]', 1)
+2026-01-02 16:23:37,926 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+2026-01-02 16:23:37,928 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:37,928 INFO sqlalchemy.engine.Engine UPDATE reports SET logs=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+INFO:sqlalchemy.engine.Engine:UPDATE reports SET logs=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2026-01-02 16:23:37,928 INFO sqlalchemy.engine.Engine [cached since 0.003254s ago] ('[{"timestamp": "16:23:37", "message": "\\u041d\\u0430\\u0447\\u0438\\u043d\\u0430\\u044e \\u0430\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0437\\u0430\\u ... (152 characters truncated) ... 0437\\u0443\\u044e \\u0442\\u0435\\u0441\\u0442\\u043e\\u0432\\u044b\\u0439 \\u0440\\u0435\\u0436\\u0438\\u043c (Dummy Key).", "stage": "searching"}]', 1)
+INFO:sqlalchemy.engine.Engine:[cached since 0.003254s ago] ('[{"timestamp": "16:23:37", "message": "\\u041d\\u0430\\u0447\\u0438\\u043d\\u0430\\u044e \\u0430\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0437\\u0430\\u ... (152 characters truncated) ... 0437\\u0443\\u044e \\u0442\\u0435\\u0441\\u0442\\u043e\\u0432\\u044b\\u0439 \\u0440\\u0435\\u0436\\u0438\\u043c (Dummy Key).", "stage": "searching"}]', 1)
+2026-01-02 16:23:37,929 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+2026-01-02 16:23:39,933 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:39,933 INFO sqlalchemy.engine.Engine UPDATE reports SET logs=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+INFO:sqlalchemy.engine.Engine:UPDATE reports SET logs=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2026-01-02 16:23:39,933 INFO sqlalchemy.engine.Engine [cached since 2.009s ago] ('[{"timestamp": "16:23:37", "message": "\\u041d\\u0430\\u0447\\u0438\\u043d\\u0430\\u044e \\u0430\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0437\\u0430\\u ... (403 characters truncated) ... \\u0430\\u043d \\u043f\\u043e\\u0438\\u0441\\u043a\\u043e\\u0432\\u044b\\u0439 \\u0437\\u0430\\u043f\\u0440\\u043e\\u0441...", "stage": "searching"}]', 1)
+INFO:sqlalchemy.engine.Engine:[cached since 2.009s ago] ('[{"timestamp": "16:23:37", "message": "\\u041d\\u0430\\u0447\\u0438\\u043d\\u0430\\u044e \\u0430\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0437\\u0430\\u ... (403 characters truncated) ... \\u0430\\u043d \\u043f\\u043e\\u0438\\u0441\\u043a\\u043e\\u0432\\u044b\\u0439 \\u0437\\u0430\\u043f\\u0440\\u043e\\u0441...", "stage": "searching"}]', 1)
+2026-01-02 16:23:39,935 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+2026-01-02 16:23:41,940 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:41,940 INFO sqlalchemy.engine.Engine UPDATE reports SET logs=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+INFO:sqlalchemy.engine.Engine:UPDATE reports SET logs=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2026-01-02 16:23:41,940 INFO sqlalchemy.engine.Engine [cached since 4.016s ago] ('[{"timestamp": "16:23:37", "message": "\\u041d\\u0430\\u0447\\u0438\\u043d\\u0430\\u044e \\u0430\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0437\\u0430\\u ... (696 characters truncated) ... 2\\u043d\\u044b\\u0435 \\u0438\\u0441\\u0442\\u043e\\u0447\\u043d\\u0438\\u043a\\u0438. \\u0427\\u0438\\u0442\\u0430\\u044e...", "stage": "reading"}]', 1)
+INFO:sqlalchemy.engine.Engine:[cached since 4.016s ago] ('[{"timestamp": "16:23:37", "message": "\\u041d\\u0430\\u0447\\u0438\\u043d\\u0430\\u044e \\u0430\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0437\\u0430\\u ... (696 characters truncated) ... 2\\u043d\\u044b\\u0435 \\u0438\\u0441\\u0442\\u043e\\u0447\\u043d\\u0438\\u043a\\u0438. \\u0427\\u0438\\u0442\\u0430\\u044e...", "stage": "reading"}]', 1)
+2026-01-02 16:23:41,942 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+2026-01-02 16:23:42,309 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:42,311 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+INFO:sqlalchemy.engine.Engine:SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2026-01-02 16:23:42,312 INFO sqlalchemy.engine.Engine [generated in 0.00039s] (10, 0)
+INFO:sqlalchemy.engine.Engine:[generated in 0.00039s] (10, 0)
+INFO:     Найдено отчетов в БД: 1
+INFO:     127.0.0.1:39882 - "GET /api/reports HTTP/1.1" 200 OK
+2026-01-02 16:23:42,315 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+2026-01-02 16:23:43,945 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:43,946 INFO sqlalchemy.engine.Engine UPDATE reports SET logs=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+INFO:sqlalchemy.engine.Engine:UPDATE reports SET logs=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2026-01-02 16:23:43,946 INFO sqlalchemy.engine.Engine [cached since 6.021s ago] ('[{"timestamp": "16:23:37", "message": "\\u041d\\u0430\\u0447\\u0438\\u043d\\u0430\\u044e \\u0430\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0437\\u0430\\u ... (946 characters truncated) ... 3\\u044e \\u043f\\u043e\\u043b\\u0443\\u0447\\u0435\\u043d\\u043d\\u044b\\u0435 \\u0434\\u0430\\u043d\\u043d\\u044b\\u0435...", "stage": "thinking"}]', 1)
+INFO:sqlalchemy.engine.Engine:[cached since 6.021s ago] ('[{"timestamp": "16:23:37", "message": "\\u041d\\u0430\\u0447\\u0438\\u043d\\u0430\\u044e \\u0430\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0437\\u0430\\u ... (946 characters truncated) ... 3\\u044e \\u043f\\u043e\\u043b\\u0443\\u0447\\u0435\\u043d\\u043d\\u044b\\u0435 \\u0434\\u0430\\u043d\\u043d\\u044b\\u0435...", "stage": "thinking"}]', 1)
+2026-01-02 16:23:43,948 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+2026-01-02 16:23:43,950 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2026-01-02 16:23:43,951 INFO sqlalchemy.engine.Engine UPDATE reports SET status=?, result_json=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+INFO:sqlalchemy.engine.Engine:UPDATE reports SET status=?, result_json=?, updated_at=CURRENT_TIMESTAMP WHERE reports.id = ?
+2026-01-02 16:23:43,951 INFO sqlalchemy.engine.Engine [generated in 0.00028s] (<ReportStatus.COMPLETED: 'COMPLETED'>, '{"markdown": "\\n## \\u0410\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0440\\u044b\\u043d\\u043a\\u0430 \\u0430\\u0432\\u0442\\u043e\\u0441\\u0442\\u0440\ ... (2846 characters truncated) ... u0430];\\n    C -->|\\u041e\\u0442\\u043a\\u0430\\u0437| E[\\u0423\\u0432\\u0435\\u0434\\u043e\\u043c\\u043b\\u0435\\u043d\\u0438\\u0435];\\n```\\n"}', 1)
+INFO:sqlalchemy.engine.Engine:[generated in 0.00028s] (<ReportStatus.COMPLETED: 'COMPLETED'>, '{"markdown": "\\n## \\u0410\\u043d\\u0430\\u043b\\u0438\\u0437 \\u0440\\u044b\\u043d\\u043a\\u0430 \\u0430\\u0432\\u0442\\u043e\\u0441\\u0442\\u0440\ ... (2846 characters truncated) ... u0430];\\n    C -->|\\u041e\\u0442\\u043a\\u0430\\u0437| E[\\u0423\\u0432\\u0435\\u0434\\u043e\\u043c\\u043b\\u0435\\u043d\\u0438\\u0435];\\n```\\n"}', 1)
+2026-01-02 16:23:43,953 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+2026-01-02 16:23:43,955 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:sqlalchemy.engine.Engine:ROLLBACK

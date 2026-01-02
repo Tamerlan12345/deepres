@@ -6,6 +6,10 @@ from app.models import Report, ReportStatus
 from app.gemini_service import process_report
 from pydantic import BaseModel
 from typing import Optional, List
+import logging
+
+# Настройка простого логгера
+logger = logging.getLogger("uvicorn")
 
 router = APIRouter()
 
@@ -57,16 +61,31 @@ async def get_report(report_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.get("/reports", response_model=List[ReportResponse])
 async def list_reports(skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Report).order_by(Report.created_at.desc()).offset(skip).limit(limit))
-    reports = result.scalars().all()
-    return [ReportResponse(
-        id=r.id,
-        query=r.query,
-        status=r.status,
-        logs=r.logs,
-        result_json=r.result_json,
-        created_at=r.created_at.isoformat()
-    ) for r in reports]
+    try:
+        # 1. Проверяем запрос к БД
+        query = select(Report).order_by(Report.created_at.desc()).offset(skip).limit(limit)
+        result = await db.execute(query)
+        reports = result.scalars().all()
+
+        logger.info(f"Найдено отчетов в БД: {len(reports)}") # Лог в консоль
+
+        # 2. Проверяем сборку ответа
+        response = []
+        for r in reports:
+            response.append(ReportResponse(
+                id=r.id,
+                query=r.query,
+                status=r.status,
+                logs=r.logs,
+                result_json=r.result_json,
+                # Добавляем защиту, если вдруг created_at отсутствует
+                created_at=r.created_at.isoformat() if r.created_at else ""
+            ))
+        return response
+
+    except Exception as e:
+        logger.error(f"ОШИБКА при получении истории: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 from fastapi.responses import Response
 from weasyprint import HTML, CSS
