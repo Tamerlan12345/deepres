@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 import logging
+import sys
 from app.config import settings
 from app.database import init_db, AsyncSessionLocal
 from app.api import router as api_router
@@ -11,13 +12,15 @@ from contextlib import asynccontextmanager
 from passlib.context import CryptContext
 from sqlalchemy import select
 
-# 1. Logging Configuration
+# --- FIX LOGGING START ---
+# Настройка логгера, чтобы он писал в консоль (stdout), которую видит Docker
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[logging.StreamHandler(), logging.FileHandler("app.log")]
+    handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger("app")
+# --- FIX LOGGING END ---
 
 # Password Context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -40,32 +43,13 @@ async def create_admin_user():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Log DATABASE_URL (masking password)
-    db_url = settings.DATABASE_URL
-    if "password" in db_url:
-        try:
-             from urllib.parse import urlparse, urlunparse
-             parsed = urlparse(db_url)
-             if parsed.password:
-                 # replace password with ****
-                 netloc = parsed.netloc.replace(f":{parsed.password}@", ":****@")
-                 masked_url = urlunparse(parsed._replace(netloc=netloc))
-             else:
-                 masked_url = db_url
-        except Exception:
-             masked_url = "Could not parse URL safely"
-    else:
-        masked_url = db_url
-
-    logger.info(f"Starting application with DATABASE_URL: {masked_url}")
-
-    # Initialize DB tables
+    logger.info("🚀 ЗАПУСК БЭКЕНДА CENTRAS AI AGENT...")
     await init_db()
-
-    # Create Admin User
+    # Сюда добавить создание админа, если еще не добавили
     await create_admin_user()
-
+    logger.info("✅ База данных инициализирована.")
     yield
+    logger.info("🛑 Остановка бэкенда.")
 
 app = FastAPI(title="Centras Strategic AI-Agent", lifespan=lifespan)
 

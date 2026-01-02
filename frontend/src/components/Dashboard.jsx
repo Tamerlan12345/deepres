@@ -13,7 +13,7 @@ const LogTerminal = ({ logs, active }) => {
     if (!logs || logs.length === 0) return null;
 
     return (
-        <div className="card bg-black/80 border-brand-800 font-mono text-xs md:text-sm p-4 h-64 overflow-y-auto custom-scrollbar mb-6 flex flex-col-reverse">
+        <div className="card bg-black/80 border-brand-800 font-mono text-xs md:text-sm p-4 h-64 overflow-y-auto custom-scrollbar mb-6 flex flex-col-reverse max-h-[150px] md:max-h-64">
             <div>
                 {logs.map((log, i) => (
                     <div key={i} className={`mb-2 ${i === logs.length - 1 && active ? 'text-accent animate-pulse' : 'text-brand-400'}`}>
@@ -44,7 +44,7 @@ const MermaidChart = ({ chart }) => {
       });
     }, [chart, id]);
 
-    return <div className="mermaid-container my-6 flex justify-center bg-brand-900/30 p-4 rounded-lg" dangerouslySetInnerHTML={{ __html: svg }} />;
+    return <div className="mermaid-container my-6 flex justify-center bg-brand-900/30 p-4 rounded-lg overflow-x-auto w-full" dangerouslySetInnerHTML={{ __html: svg }} />;
 };
 
 const JsonChart = ({ json }) => {
@@ -122,7 +122,7 @@ const JsonChart = ({ json }) => {
         }
 
         return (
-            <div className="card border-brand-800 bg-brand-900/50 p-6 my-8 break-inside-avoid">
+            <div className="card border-brand-800 bg-brand-900/50 p-6 my-8 break-inside-avoid w-full">
                 <h4 className="text-lg font-bold text-white mb-4 text-center">{title}</h4>
                 {renderChart()}
             </div>
@@ -207,7 +207,7 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto pb-12 pt-6 px-6">
+    <div className="max-w-6xl mx-auto pb-12 pt-6 px-4 md:px-6">
       {/* Search / Hero Section */}
       <div className="card mb-8 relative overflow-hidden group print:hidden">
          {/* Background decoration */}
@@ -225,19 +225,19 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
             </div>
 
             <form onSubmit={handleSubmit} className="relative mb-6">
-                <div className="relative group/input">
+                <div className="flex flex-col md:block relative group/input">
                     <input
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Ask a complex strategic question..."
-                        className="input-field pl-14 py-5 text-lg shadow-inner bg-brand-950/50 border-brand-800 focus:border-accent transition-all"
+                        className="input-field w-full md:pl-14 py-5 text-lg shadow-inner bg-brand-950/50 border-brand-800 focus:border-accent transition-all mb-3 md:mb-0"
                     />
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-brand-500 group-focus-within/input:text-accent transition-colors" size={24} />
+                    <Search className="hidden md:block absolute left-5 top-1/2 -translate-y-1/2 text-brand-500 group-focus-within/input:text-accent transition-colors" size={24} />
                     <button
                         type="submit"
                         disabled={loading || !query.trim()}
-                        className="absolute right-3 top-3 bottom-3 btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-accent/20"
+                        className="w-full md:w-auto md:absolute md:right-3 md:top-3 md:bottom-3 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-accent/20"
                     >
                         {loading ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} />}
                         <span>Analyze</span>
@@ -314,10 +314,35 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
                   {/* Markdown Content */}
                   <div className="prose prose-lg prose-invert prose-blue max-w-none
                     prose-headings:text-white prose-p:text-brand-300 prose-strong:text-brand-100 prose-li:text-brand-300
-                    print:prose-p:text-black print:prose-headings:text-black print:prose-li:text-black">
+                    print:prose-p:text-black print:prose-headings:text-black print:prose-li:text-black
+                    table-auto overflow-x-auto block">
                       <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
+                              table({node, children, ...props}) {
+                                    return (
+                                        <div className="overflow-x-auto mb-6 border border-brand-800 rounded-lg">
+                                            <table className="w-full text-left border-collapse" {...props}>
+                                                {children}
+                                            </table>
+                                        </div>
+                                    )
+                              },
+                              thead({node, children, ...props}) {
+                                  return <thead className="bg-brand-900 text-brand-100" {...props}>{children}</thead>
+                              },
+                              tbody({node, children, ...props}) {
+                                  return <tbody className="divide-y divide-brand-800" {...props}>{children}</tbody>
+                              },
+                              tr({node, children, ...props}) {
+                                  return <tr className="hover:bg-brand-900/50 transition-colors" {...props}>{children}</tr>
+                              },
+                              th({node, children, ...props}) {
+                                  return <th className="px-4 py-3 font-semibold text-sm uppercase tracking-wider" {...props}>{children}</th>
+                              },
+                              td({node, children, ...props}) {
+                                  return <td className="px-4 py-3 text-sm text-brand-300" {...props}>{children}</td>
+                              },
                               code({node, inline, className, children, ...props}) {
                                   const match = /language-(\w+)(?::(\w+))?/.exec(className || '')
                                   const language = match ? match[1] : ''
