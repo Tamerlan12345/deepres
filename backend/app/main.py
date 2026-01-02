@@ -2,26 +2,47 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
-from app.config import settings
-from app.database import init_db
-from app.api import router as api_router
-from contextlib import asynccontextmanager
-
 import logging
+from app.config import settings
+from app.database import init_db, AsyncSessionLocal
+from app.api import router as api_router
+from app.models import User
+from contextlib import asynccontextmanager
+from passlib.context import CryptContext
+from sqlalchemy import select
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# 1. Logging Configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(), logging.FileHandler("app.log")]
+)
+logger = logging.getLogger("app")
+
+# Password Context
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+async def create_admin_user():
+    async with AsyncSessionLocal() as session:
+        try:
+            result = await session.execute(select(User).where(User.username == "admin"))
+            user = result.scalars().first()
+            if not user:
+                hashed_pw = pwd_context.hash("123456")
+                new_user = User(username="admin", hashed_password=hashed_pw)
+                session.add(new_user)
+                await session.commit()
+                logger.info("Admin user created: admin / 123456")
+            else:
+                logger.info("Admin user already exists")
+        except Exception as e:
+            logger.error(f"Error creating admin user: {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Log DATABASE_URL (masking password)
     db_url = settings.DATABASE_URL
     if "password" in db_url:
-        # Basic masking, though for full safety a regex is better.
-        # But here we assume typical format or just print it if it's safe (sqlite)
-        masked_url = db_url # TODO: Implement masking if needed
-        # For now, let's just log it as requested "скрыв пароль"
-        # Since I am in control of the code, I will write a small logic
         try:
              from urllib.parse import urlparse, urlunparse
              parsed = urlparse(db_url)
@@ -40,6 +61,10 @@ async def lifespan(app: FastAPI):
 
     # Initialize DB tables
     await init_db()
+
+    # Create Admin User
+    await create_admin_user()
+
     yield
 
 app = FastAPI(title="Centras Strategic AI-Agent", lifespan=lifespan)
@@ -56,11 +81,6 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api")
 
 # Serve Frontend Static Files
-# In Docker, we are likely in /app/backend or /app.
-# If WORKDIR is /app/backend, then frontend is at ../frontend/dist
-# If WORKDIR is /app, then frontend is at frontend/dist
-
-# Let's try to locate it relative to this file
 current_file_dir = os.path.dirname(os.path.abspath(__file__)) # /app/backend/app
 backend_dir = os.path.dirname(current_file_dir) # /app/backend
 project_root = os.path.dirname(backend_dir) # /app

@@ -246,17 +246,29 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
             </form>
 
             <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
-                <button onClick={() => handleScenario("Анализ конкурентов (Евразия, Халык, Фридом): Прибыль и GWP за Q3 2024")}
+                <button onClick={() => handleScenario("Анализ динамики активов топ-5 страховых компаний РК за 2024 год (сравнение с 2023).")}
                     className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
-                    🏢 Competitor Deep Dive
+                    📊 Стратегия и Рынок
                 </button>
-                <button onClick={() => handleScenario("Мониторинг регуляторных изменений в страховании РК за последние 3 месяца")}
+                <button onClick={() => handleScenario("Сравнение условий и тарифов КАСКО для юридических лиц: Centras, Halyk, Eurasia. Плюсы и минусы.")}
                     className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
-                    ⚖️ Regulatory Check
+                    🚗 Продукт (Авто)
                 </button>
-                <button onClick={() => handleScenario("Сравни условия КАСКО (Centras vs Freedom) по данным с сайтов")}
+                <button onClick={() => handleScenario("Перспективы и объем рынка киберстрахования в Казахстане и СНГ: отчеты и прогнозы на 2025.")}
                     className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
-                    🛡️ Product Benchmark
+                    🚀 Новые ниши
+                </button>
+                <button onClick={() => handleScenario("Обзор жалоб клиентов на ДМС в Казахстане: основные проблемы и рейтинг лояльности.")}
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
+                    🏥 Медицина (ДМС)
+                </button>
+                <button onClick={() => handleScenario("Последние постановления НБ РК по страхованию жизни: влияние на достаточность капитала.")}
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
+                    ⚖️ Регуляторика
+                </button>
+                <button onClick={() => handleScenario("Статистика выплат по индексному страхованию влаги в зерновых регионах РК за прошлый сезон.")}
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
+                    🌾 Агро
                 </button>
             </div>
         </div>
