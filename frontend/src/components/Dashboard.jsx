@@ -1,31 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
-import { Download, Send, RefreshCw, AlertCircle, BrainCircuit, Search, FileText, Database, ArrowRight, Zap, Activity } from 'lucide-react';
+import remarkGfm from 'remark-gfm';
+import mermaid from 'mermaid';
+import { Download, Search, RefreshCw, Zap, Activity, AlertCircle, BrainCircuit } from 'lucide-react';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  defaults
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
-
-// Chart.js Global Configuration for Dark Mode
-defaults.color = '#94a3b8';
-defaults.font.family = 'Inter';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
+    BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 
 const LOADING_MESSAGES = [
     "Initializing Deep Research Agent...",
@@ -39,12 +21,122 @@ const LOADING_MESSAGES = [
     "Finalizing report format..."
 ];
 
+const MermaidChart = ({ chart }) => {
+    const [svg, setSvg] = useState('');
+    const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+
+    useEffect(() => {
+      mermaid.render(id, chart).then((result) => {
+          setSvg(result.svg);
+      }).catch(err => {
+          console.error("Mermaid error:", err);
+          setSvg(`<div class="text-error">Error rendering diagram</div>`);
+      });
+    }, [chart, id]);
+
+    return <div className="mermaid-container my-6 flex justify-center bg-brand-900/30 p-4 rounded-lg" dangerouslySetInnerHTML={{ __html: svg }} />;
+};
+
+const JsonChart = ({ json }) => {
+    try {
+        const data = JSON.parse(json);
+        const { type, title, data: chartData } = data;
+
+        const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+        const CustomTooltip = ({ active, payload, label }) => {
+            if (active && payload && payload.length) {
+                return (
+                    <div className="bg-brand-900 border border-brand-700 p-2 rounded shadow-lg text-sm">
+                        <p className="font-bold text-white">{label}</p>
+                        <p className="text-accent">{`${payload[0].name}: ${payload[0].value}`}</p>
+                    </div>
+                );
+            }
+            return null;
+        };
+
+        const renderChart = () => {
+             if (type === 'bar') {
+                return (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                            <XAxis dataKey="name" stroke="#94a3b8" tick={{fontSize: 12}} />
+                            <YAxis stroke="#94a3b8" tick={{fontSize: 12}} />
+                            <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}} />
+                            <Legend wrapperStyle={{paddingTop: '10px'}} />
+                            <Bar dataKey="value" fill="#3b82f6" name={title} radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                );
+            } else if (type === 'line') {
+                 return (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                            <XAxis dataKey="name" stroke="#94a3b8" tick={{fontSize: 12}} />
+                            <YAxis stroke="#94a3b8" tick={{fontSize: 12}} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend wrapperStyle={{paddingTop: '10px'}} />
+                            <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} name={title} dot={{r: 4, fill:'#3b82f6'}} activeDot={{r: 6}} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                 );
+            } else if (type === 'pie') {
+                return (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                            <Pie
+                                data={chartData}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                outerRadius={100}
+                                fill="#8884d8"
+                                dataKey="value"
+                                nameKey="name"
+                            >
+                                {chartData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                );
+            }
+            return <div className="text-brand-400 p-4 text-center">Unsupported chart type: {type}</div>
+        }
+
+        return (
+            <div className="card border-brand-800 bg-brand-900/50 p-6 my-8 break-inside-avoid">
+                <h4 className="text-lg font-bold text-white mb-4 text-center">{title}</h4>
+                {renderChart()}
+            </div>
+        );
+    } catch (e) {
+        return <div className="text-error border border-error/20 bg-error-bg p-3 rounded text-sm my-4">Error parsing chart data: {e.message}</div>;
+    }
+};
+
 const Dashboard = ({ currentReportId, onNewReport }) => {
   const [query, setQuery] = useState("");
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+
+  useEffect(() => {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'loose',
+      fontFamily: 'Inter'
+    });
+  }, []);
 
   // Poll for report status if it's processing
   useEffect(() => {
@@ -109,50 +201,14 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
     setQuery(text);
   };
 
-  const renderCharts = (chartsData) => {
-      if (!chartsData || chartsData.length === 0) return null;
-      return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {chartsData.map((chart, idx) => {
-                  if (chart.type === 'bar') {
-                    const data = {
-                        labels: chart.labels,
-                        datasets: chart.datasets.map(ds => ({
-                            label: ds.label,
-                            data: ds.data,
-                            backgroundColor: 'rgba(59, 130, 246, 0.8)', // Accent Blue
-                            borderColor: '#3b82f6',
-                            borderWidth: 1,
-                            borderRadius: 4,
-                        }))
-                    };
-                    const options = {
-                        responsive: true,
-                        plugins: {
-                            title: { display: true, text: chart.title, color: '#f1f5f9', font: { size: 16, weight: 'bold' } },
-                            legend: { labels: { color: '#cbd5e1' } }
-                        },
-                        scales: {
-                            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
-                            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-                        }
-                    };
-                    return (
-                        <div key={idx} className="card border-brand-800 bg-brand-900/50">
-                            <Bar options={options} data={data} />
-                        </div>
-                    );
-                  }
-                  return null;
-              })}
-          </div>
-      );
+  const handlePrint = () => {
+      window.print();
   };
 
   return (
     <div className="max-w-6xl mx-auto pb-12 pt-6 px-6">
       {/* Search / Hero Section */}
-      <div className="card mb-8 relative overflow-hidden group">
+      <div className="card mb-8 relative overflow-hidden group print:hidden">
          {/* Background decoration */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-accent/15 transition-all duration-700"></div>
 
@@ -230,87 +286,54 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
           )}
 
           {report && report.status === 'COMPLETED' && report.result_json && (
-              <>
-                {/* Summary Card */}
-                <div className="card relative overflow-hidden border-l-4 border-l-accent">
-                    <div className="absolute top-0 right-0 p-6 opacity-5">
-                        <FileText size={120} />
-                    </div>
-                    <div className="flex items-center gap-3 mb-4 text-accent">
-                        <div className="p-1.5 bg-accent/10 rounded">
-                            <FileText size={20} />
-                        </div>
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-brand-300">Executive Summary</h3>
-                    </div>
-                    <p className="text-brand-100 text-lg leading-relaxed font-light">{report.result_json.summary}</p>
-                </div>
-
-                {/* Key Metrics */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {report.result_json.key_metrics?.map((metric, i) => (
-                        <div key={i} className="card p-5 group hover:border-brand-600 transition-colors">
-                            <div className="flex justify-between items-start mb-2">
-                                <p className="text-xs text-brand-500 font-bold uppercase tracking-wider">{metric.label}</p>
-                                {metric.trend && (
-                                     <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                                         metric.trend === 'Рост' ? 'text-emerald-400 border-emerald-900/50 bg-emerald-900/20' :
-                                         metric.trend === 'Падение' ? 'text-red-400 border-red-900/50 bg-red-900/20' :
-                                         'text-brand-400 border-brand-700'
-                                     }`}>
-                                         {metric.trend}
-                                     </span>
-                                )}
-                            </div>
-                            <p className="text-3xl font-bold text-white mb-2 tracking-tight group-hover:text-accent transition-colors">{metric.value}</p>
-                            {metric.change && (
-                                <div className={`text-sm font-medium ${metric.change?.includes('+') ? 'text-emerald-500' : 'text-red-500'}`}>
-                                    {metric.change} <span className="text-brand-600 text-xs font-normal">vs prev. period</span>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Charts */}
-                {renderCharts(report.result_json.charts_data)}
-
-                {/* Detailed Analysis */}
-                <div className="card">
-                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-brand-800">
+              <div className="print:text-black">
+                  <div className="flex justify-between items-center mb-6 pb-4 border-b border-brand-800 print:hidden">
                         <h3 className="text-xl font-bold text-white flex items-center gap-3">
                             <BrainCircuit className="text-brand-400" size={24} />
-                            Detailed Analysis
+                            Strategic Report
                         </h3>
-                        <a href={`/api/reports/${report.id}/pdf`} target="_blank" rel="noreferrer" className="btn-secondary flex items-center gap-2 text-sm">
-                            <Download size={16} /> Export PDF
-                        </a>
+                        <button onClick={handlePrint} className="btn-secondary flex items-center gap-2 text-sm">
+                            <Download size={16} /> Print / Save PDF
+                        </button>
                     </div>
-                    <div className="prose prose-invert prose-brand max-w-none text-brand-300 prose-headings:text-white prose-a:text-accent prose-strong:text-brand-100">
-                        <ReactMarkdown>{report.result_json.detailed_analysis}</ReactMarkdown>
-                    </div>
-                </div>
 
-                 {/* Sources */}
-                 {report.result_json.sources && report.result_json.sources.length > 0 && (
-                    <div className="bg-brand-950/50 p-6 rounded-xl border border-brand-800/50">
-                        <div className="flex items-center gap-2 mb-4 text-brand-500">
-                            <Database size={16} />
-                            <h4 className="text-xs font-bold uppercase tracking-wider">Sources & Grounding</h4>
-                        </div>
-                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {report.result_json.sources.map((s, i) => (
-                                <li key={i} className="text-sm truncate group">
-                                    <a href={s} target="_blank" rel="noreferrer" className="text-brand-400 group-hover:text-accent transition-colors flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 bg-brand-700 rounded-full group-hover:bg-accent transition-colors flex-shrink-0"></div>
-                                        <span className="truncate">{s}</span>
-                                        <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                 )}
-              </>
+                  {/* Markdown Content */}
+                  <div className="prose prose-lg prose-invert prose-blue max-w-none
+                    prose-headings:text-white prose-p:text-brand-300 prose-strong:text-brand-100 prose-li:text-brand-300
+                    print:prose-p:text-black print:prose-headings:text-black print:prose-li:text-black">
+                      <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                              code({node, inline, className, children, ...props}) {
+                                  const match = /language-(\w+)(?::(\w+))?/.exec(className || '')
+                                  const language = match ? match[1] : ''
+
+                                  if (!inline && language === 'mermaid') {
+                                      return <MermaidChart chart={String(children).replace(/\n$/, '')} />
+                                  }
+
+                                  if (!inline && language === 'json' && className.includes('language-json:chart')) {
+                                      return <JsonChart json={String(children).replace(/\n$/, '')} />
+                                  }
+
+                                  return !inline ? (
+                                      <pre className="bg-brand-900/50 p-4 rounded-lg overflow-x-auto border border-brand-800 print:border-gray-300 print:bg-gray-50">
+                                          <code className={className} {...props}>
+                                              {children}
+                                          </code>
+                                      </pre>
+                                  ) : (
+                                      <code className="bg-brand-900/50 px-1.5 py-0.5 rounded text-accent font-mono text-sm print:bg-gray-100 print:text-black" {...props}>
+                                          {children}
+                                      </code>
+                                  )
+                              }
+                          }}
+                      >
+                          {report.result_json.markdown || report.result_json.detailed_analysis || "No content"}
+                      </ReactMarkdown>
+                  </div>
+              </div>
           )}
       </div>
     </div>

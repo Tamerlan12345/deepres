@@ -71,3 +71,40 @@
     transform: translateY(0);
   }
 }
+
+@media print {
+  body {
+    @apply bg-white text-black h-auto overflow-visible;
+  }
+
+  /* Hide UI elements */
+  nav, button, form, .input-field, .print\:hidden, aside {
+    display: none !important;
+  }
+
+  /* Reset colors for print */
+  .card {
+    @apply bg-transparent border-0 shadow-none p-0;
+  }
+
+  .prose {
+    @apply text-black;
+  }
+
+  .prose h1, .prose h2, .prose h3, .prose h4 {
+    @apply text-black;
+  }
+
+  .prose strong {
+    @apply text-black;
+  }
+
+  /* Page breaks */
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+
+  canvas, svg, .mermaid-container, .card {
+    page-break-inside: avoid;
+  }
+}
