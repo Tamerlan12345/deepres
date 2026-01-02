@@ -28,16 +28,43 @@ async def process_report(report_id: int, db_session_factory):
                 # Mock response for dev/test without key
                 await asyncio.sleep(3) # Simulate thinking
                 response_text = """
-```json
+## Анализ рынка автострахования
+
+По результатам анализа, компания Freedom Finance демонстрирует агрессивный рост.
+
+### Ключевые показатели
+
+*   **Доля рынка**: Рост на 2% за последний квартал.
+*   **Объем премий**: Увеличение до 15 млрд тенге.
+
+### Визуализация данных
+
+Вот сравнение долей рынка основных игроков:
+
+```json:chart
 {
-  "summary": "MOCK RESULT: Deep Research simulated. Freedom Finance is aggressively expanding in auto insurance.",
-  "key_metrics": [
-    {"label": "Simulated Market Share", "value": "10%", "change": "+2%"}
-  ],
-  "charts_data": [],
-  "detailed_analysis": "## Deep Research Simulation\\n\\nSince no API key was provided, this is a simulated response demonstrating the flow.\\n\\n1. **Step 1**: Analyzed query.\\n2. **Step 2**: 'Searched' Google.\\n3. **Step 3**: Synthesized results.",
-  "sources": ["http://mock-source.com"]
+  "type": "bar",
+  "title": "Доля рынка (Mock)",
+  "data": [
+    {"name": "Freedom", "value": 30},
+    {"name": "Eurasia", "value": 25},
+    {"name": "Halyk", "value": 20},
+    {"name": "Centras", "value": 15},
+    {"name": "Others", "value": 10}
+  ]
 }
+```
+
+### Процесс оформления полиса
+
+Процесс цифрового оформления выглядит следующим образом:
+
+```mermaid
+graph TD;
+    A[Клиент] -->|Заявка| B(Сайт);
+    B --> C{Проверка};
+    C -->|ОК| D[Выписка полиса];
+    C -->|Отказ| E[Уведомление];
 ```
 """
             else:
@@ -124,31 +151,9 @@ async def process_report(report_id: int, db_session_factory):
                     await db.commit()
                     return
 
-            # 3. Parse JSON
-            # Clean up potential markdown formatting
-            json_str = response_text.strip()
-            if json_str.startswith("```json"):
-                json_str = json_str[7:]
-            elif json_str.startswith("```"): # handle case where language isn't specified
-                json_str = json_str[3:]
-
-            if json_str.endswith("```"):
-                json_str = json_str[:-3]
-
-            json_str = json_str.strip()
-
-            try:
-                result_json = json.loads(json_str)
-            except json.JSONDecodeError:
-                # Fallback: Model might have returned just text despite instructions.
-                # Create a wrapper.
-                result_json = {
-                    "summary": "Model output was not strict JSON. See detailed analysis.",
-                    "key_metrics": [],
-                    "charts_data": [],
-                    "detailed_analysis": response_text,
-                    "sources": []
-                }
+            # 3. Store Result
+            # Store the markdown text inside a JSON wrapper to satisfy the DB schema (JSON column)
+            result_json = {"markdown": response_text}
 
             # 4. Save Result
             report.result_json = result_json
