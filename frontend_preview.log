@@ -1,0 +1,10 @@
+
+> centras-frontend@0.0.0 preview
+> vite preview --port 4173
+
+  ➜  Local:   http://localhost:4173/
+  ➜  Network: use --host to expose
+6:00:30 PM [vite] http proxy error: /api/reports?limit=20
+AggregateError [ECONNREFUSED]:
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)

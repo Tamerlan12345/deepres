@@ -1,0 +1,126 @@
+INFO:     Started server process [3897]
+INFO:     Waiting for application startup.
+2026-01-02 17:57:00,836 [INFO] app: Starting application with DATABASE_URL: sqlite+aiosqlite:///./test.db
+2026-01-02 17:57:00,839 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 17:57:00,839 [INFO] sqlalchemy.engine.Engine: BEGIN (implicit)
+2026-01-02 17:57:00,840 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reports")
+2026-01-02 17:57:00,840 [INFO] sqlalchemy.engine.Engine: PRAGMA main.table_info("reports")
+2026-01-02 17:57:00,840 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 17:57:00,840 [INFO] sqlalchemy.engine.Engine: [raw sql] ()
+2026-01-02 17:57:00,841 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-02 17:57:00,841 [INFO] sqlalchemy.engine.Engine: PRAGMA main.table_info("users")
+2026-01-02 17:57:00,841 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 17:57:00,841 [INFO] sqlalchemy.engine.Engine: [raw sql] ()
+2026-01-02 17:57:00,843 INFO sqlalchemy.engine.Engine
+DROP TABLE users
+2026-01-02 17:57:00,843 [INFO] sqlalchemy.engine.Engine:
+DROP TABLE users
+2026-01-02 17:57:00,843 INFO sqlalchemy.engine.Engine [no key 0.00014s] ()
+2026-01-02 17:57:00,843 [INFO] sqlalchemy.engine.Engine: [no key 0.00014s] ()
+2026-01-02 17:57:00,846 INFO sqlalchemy.engine.Engine
+DROP TABLE reports
+2026-01-02 17:57:00,846 [INFO] sqlalchemy.engine.Engine:
+DROP TABLE reports
+2026-01-02 17:57:00,846 INFO sqlalchemy.engine.Engine [no key 0.00014s] ()
+2026-01-02 17:57:00,846 [INFO] sqlalchemy.engine.Engine: [no key 0.00014s] ()
+2026-01-02 17:57:00,848 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reports")
+2026-01-02 17:57:00,848 [INFO] sqlalchemy.engine.Engine: PRAGMA main.table_info("reports")
+2026-01-02 17:57:00,848 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 17:57:00,848 [INFO] sqlalchemy.engine.Engine: [raw sql] ()
+2026-01-02 17:57:00,849 INFO sqlalchemy.engine.Engine PRAGMA temp.table_info("reports")
+2026-01-02 17:57:00,849 [INFO] sqlalchemy.engine.Engine: PRAGMA temp.table_info("reports")
+2026-01-02 17:57:00,849 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 17:57:00,849 [INFO] sqlalchemy.engine.Engine: [raw sql] ()
+2026-01-02 17:57:00,850 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-02 17:57:00,850 [INFO] sqlalchemy.engine.Engine: PRAGMA main.table_info("users")
+2026-01-02 17:57:00,850 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 17:57:00,850 [INFO] sqlalchemy.engine.Engine: [raw sql] ()
+2026-01-02 17:57:00,851 INFO sqlalchemy.engine.Engine PRAGMA temp.table_info("users")
+2026-01-02 17:57:00,851 [INFO] sqlalchemy.engine.Engine: PRAGMA temp.table_info("users")
+2026-01-02 17:57:00,851 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 17:57:00,851 [INFO] sqlalchemy.engine.Engine: [raw sql] ()
+2026-01-02 17:57:00,852 INFO sqlalchemy.engine.Engine
+CREATE TABLE reports (
+	id INTEGER NOT NULL,
+	"query" TEXT NOT NULL,
+	status VARCHAR,
+	logs JSON,
+	result_json JSON,
+	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	updated_at DATETIME,
+	PRIMARY KEY (id)
+)
+
+
+2026-01-02 17:57:00,852 [INFO] sqlalchemy.engine.Engine:
+CREATE TABLE reports (
+	id INTEGER NOT NULL,
+	"query" TEXT NOT NULL,
+	status VARCHAR,
+	logs JSON,
+	result_json JSON,
+	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	updated_at DATETIME,
+	PRIMARY KEY (id)
+)
+
+
+2026-01-02 17:57:00,853 INFO sqlalchemy.engine.Engine [no key 0.00015s] ()
+2026-01-02 17:57:00,853 [INFO] sqlalchemy.engine.Engine: [no key 0.00015s] ()
+2026-01-02 17:57:00,855 INFO sqlalchemy.engine.Engine CREATE INDEX ix_reports_id ON reports (id)
+2026-01-02 17:57:00,855 [INFO] sqlalchemy.engine.Engine: CREATE INDEX ix_reports_id ON reports (id)
+2026-01-02 17:57:00,855 INFO sqlalchemy.engine.Engine [no key 0.00013s] ()
+2026-01-02 17:57:00,855 [INFO] sqlalchemy.engine.Engine: [no key 0.00013s] ()
+2026-01-02 17:57:00,858 INFO sqlalchemy.engine.Engine
+CREATE TABLE users (
+	id INTEGER NOT NULL,
+	username VARCHAR,
+	hashed_password VARCHAR,
+	PRIMARY KEY (id)
+)
+
+
+2026-01-02 17:57:00,858 [INFO] sqlalchemy.engine.Engine:
+CREATE TABLE users (
+	id INTEGER NOT NULL,
+	username VARCHAR,
+	hashed_password VARCHAR,
+	PRIMARY KEY (id)
+)
+
+
+2026-01-02 17:57:00,858 INFO sqlalchemy.engine.Engine [no key 0.00017s] ()
+2026-01-02 17:57:00,858 [INFO] sqlalchemy.engine.Engine: [no key 0.00017s] ()
+2026-01-02 17:57:00,860 INFO sqlalchemy.engine.Engine CREATE UNIQUE INDEX ix_users_username ON users (username)
+2026-01-02 17:57:00,860 [INFO] sqlalchemy.engine.Engine: CREATE UNIQUE INDEX ix_users_username ON users (username)
+2026-01-02 17:57:00,860 INFO sqlalchemy.engine.Engine [no key 0.00018s] ()
+2026-01-02 17:57:00,860 [INFO] sqlalchemy.engine.Engine: [no key 0.00018s] ()
+2026-01-02 17:57:00,863 INFO sqlalchemy.engine.Engine CREATE INDEX ix_users_id ON users (id)
+2026-01-02 17:57:00,863 [INFO] sqlalchemy.engine.Engine: CREATE INDEX ix_users_id ON users (id)
+2026-01-02 17:57:00,863 INFO sqlalchemy.engine.Engine [no key 0.00018s] ()
+2026-01-02 17:57:00,863 [INFO] sqlalchemy.engine.Engine: [no key 0.00018s] ()
+2026-01-02 17:57:00,866 INFO sqlalchemy.engine.Engine COMMIT
+2026-01-02 17:57:00,866 [INFO] sqlalchemy.engine.Engine: COMMIT
+2026-01-02 17:57:00,867 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 17:57:00,867 [INFO] sqlalchemy.engine.Engine: BEGIN (implicit)
+2026-01-02 17:57:00,872 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password
+FROM users
+WHERE users.username = ?
+2026-01-02 17:57:00,872 [INFO] sqlalchemy.engine.Engine: SELECT users.id, users.username, users.hashed_password
+FROM users
+WHERE users.username = ?
+2026-01-02 17:57:00,872 INFO sqlalchemy.engine.Engine [generated in 0.00026s] ('admin',)
+2026-01-02 17:57:00,872 [INFO] sqlalchemy.engine.Engine: [generated in 0.00026s] ('admin',)
+2026-01-02 17:57:01,230 INFO sqlalchemy.engine.Engine INSERT INTO users (username, hashed_password) VALUES (?, ?)
+2026-01-02 17:57:01,230 [INFO] sqlalchemy.engine.Engine: INSERT INTO users (username, hashed_password) VALUES (?, ?)
+2026-01-02 17:57:01,230 INFO sqlalchemy.engine.Engine [generated in 0.00041s] ('admin', '$2b$12$UvL4psVCERGwwVjfoQc8nemJ2DWD.4hgLFUYSJCgR0NI4qomYOwaq')
+2026-01-02 17:57:01,230 [INFO] sqlalchemy.engine.Engine: [generated in 0.00041s] ('admin', '$2b$12$UvL4psVCERGwwVjfoQc8nemJ2DWD.4hgLFUYSJCgR0NI4qomYOwaq')
+2026-01-02 17:57:01,233 INFO sqlalchemy.engine.Engine COMMIT
+2026-01-02 17:57:01,233 [INFO] sqlalchemy.engine.Engine: COMMIT
+2026-01-02 17:57:01,235 [INFO] app: Admin user created: admin / 123456
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3897]

@@ -13,3 +13,5 @@ alembic
 psycopg2-binary
 reportlab
 aiosqlite
+passlib[bcrypt]
+bcrypt
