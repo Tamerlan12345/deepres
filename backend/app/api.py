@@ -16,6 +16,7 @@ class ReportResponse(BaseModel):
     id: int
     query: str
     status: str
+    logs: Optional[List[dict]] = []
     result_json: Optional[dict] = None
     created_at: str
 
@@ -36,6 +37,7 @@ async def create_report(report_in: ReportCreate, background_tasks: BackgroundTas
         id=report.id,
         query=report.query,
         status=report.status,
+        logs=report.logs,
         created_at=report.created_at.isoformat()
     )
 
@@ -48,6 +50,7 @@ async def get_report(report_id: int, db: AsyncSession = Depends(get_db)):
         id=result.id,
         query=result.query,
         status=result.status,
+        logs=result.logs,
         result_json=result.result_json,
         created_at=result.created_at.isoformat()
     )
@@ -60,6 +63,7 @@ async def list_reports(skip: int = 0, limit: int = 10, db: AsyncSession = Depend
         id=r.id,
         query=r.query,
         status=r.status,
+        logs=r.logs,
         result_json=r.result_json,
         created_at=r.created_at.isoformat()
     ) for r in reports]

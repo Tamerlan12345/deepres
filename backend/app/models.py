@@ -15,6 +15,7 @@ class Report(Base):
     id = Column(Integer, primary_key=True, index=True)
     query = Column(Text, nullable=False)
     status = Column(String, default=ReportStatus.PENDING)
+    logs = Column(JSON, default=[])
     result_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
