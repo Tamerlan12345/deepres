@@ -49,15 +49,15 @@ async def process_report(report_id: int, db_session_factory):
                 # Configuration for "Deep Research" behavior
                 agent_name = "deep-research-pro-preview-12-2025"
 
+                # Combined input: System Prompt + User Query
+                combined_input = f"{SYSTEM_PROMPT}\n\nUSER QUERY:\n{user_query}"
+
                 # Call interactions.create asynchronously
                 # Using client.aio.interactions.create for agent interactions
                 print(f"Starting Deep Research interaction for report {report_id}...")
                 interaction = await client.aio.interactions.create(
                     agent=agent_name,
-                    input=user_query,
-                    generation_config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT
-                    ),
+                    input=combined_input,
                     background=True
                 )
 
@@ -72,7 +72,7 @@ async def process_report(report_id: int, db_session_factory):
                     if current_time - start_time > timeout:
                         raise TimeoutError("Deep Research timed out.")
 
-                    await asyncio.sleep(15)
+                    await asyncio.sleep(10)
 
                     try:
                         # Check status
@@ -105,7 +105,12 @@ async def process_report(report_id: int, db_session_factory):
 
                 # Get the last output as per instructions
                 output = interaction.outputs[-1]
-                response_text = output.content.parts[0].text
+
+                try:
+                    response_text = output.content.parts[0].text
+                except (AttributeError, IndexError) as e:
+                    print(f"Warning: Failed to access content.parts[0].text: {e}. Dumping output.")
+                    response_text = str(output)
 
                 if not response_text:
                     error_msg = "Model returned empty response."
