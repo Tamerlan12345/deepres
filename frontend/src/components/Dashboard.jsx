@@ -9,17 +9,27 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
-const LOADING_MESSAGES = [
-    "Initializing Deep Research Agent...",
-    "Understanding context and strategic intent...",
-    "Accessing Google Search Tool...",
-    "Searching 'kase.kz' for financial reports...",
-    "Analyzing competitor quarterly results...",
-    "Cross-referencing data from National Bank...",
-    "Synthesizing key metrics...",
-    "Generating strategic insights...",
-    "Finalizing report format..."
-];
+const LogTerminal = ({ logs, active }) => {
+    if (!logs || logs.length === 0) return null;
+
+    return (
+        <div className="card bg-black/80 border-brand-800 font-mono text-xs md:text-sm p-4 h-64 overflow-y-auto custom-scrollbar mb-6 flex flex-col-reverse">
+            <div>
+                {logs.map((log, i) => (
+                    <div key={i} className={`mb-2 ${i === logs.length - 1 && active ? 'text-accent animate-pulse' : 'text-brand-400'}`}>
+                        <span className="text-brand-600 mr-2">[{log.timestamp}]</span>
+                        <span>{log.message}</span>
+                    </div>
+                ))}
+                {active && (
+                    <div className="text-accent mt-2">
+                        <span className="animate-pulse">_</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const MermaidChart = ({ chart }) => {
     const [svg, setSvg] = useState('');
@@ -127,7 +137,6 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
 
   useEffect(() => {
     mermaid.initialize({
@@ -146,31 +155,24 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
       fetchReport(currentReportId);
       interval = setInterval(() => {
         fetchReport(currentReportId);
-      }, 3000);
+      }, 2000); // Faster polling for smoother log updates
     }
     return () => clearInterval(interval);
   }, [currentReportId]);
 
-  // Rotate loading messages
-  useEffect(() => {
-      let msgInterval;
-      if (loading && (!report || report.status !== 'COMPLETED')) {
-          msgInterval = setInterval(() => {
-              setLoadingMsgIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
-          }, 4000);
-      }
-      return () => clearInterval(msgInterval);
-  }, [loading, report]);
-
   const fetchReport = async (id) => {
     try {
       const res = await axios.get(`/api/reports/${id}`);
-      setReport(res.data);
-      if (res.data.status === 'COMPLETED') {
+      const data = res.data;
+      setReport(data);
+
+      if (data.status === 'COMPLETED') {
         setLoading(false);
-      } else if (res.data.status === 'FAILED') {
+      } else if (data.status === 'FAILED') {
         setLoading(false);
         setError("Report generation failed.");
+      } else {
+        setLoading(true);
       }
     } catch (e) {
         console.error(e);
@@ -186,7 +188,6 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
     setLoading(true);
     setReport(null);
     setError(null);
-    setLoadingMsgIndex(0);
     try {
       const res = await axios.post('/api/reports', { query });
       onNewReport(res.data.id);
@@ -263,18 +264,19 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
 
       {/* Report View */}
       <div className="space-y-8 animate-fade-in-up">
-          {loading && (!report || report.status !== 'COMPLETED' && report.status !== 'FAILED') && (
-              <div className="flex flex-col items-center justify-center py-20 card border-dashed border-2 border-brand-800 bg-transparent">
-                  <div className="relative mb-8">
-                    <div className="absolute inset-0 bg-accent rounded-full animate-ping opacity-20"></div>
-                    <div className="relative bg-brand-900 p-6 rounded-full border border-brand-700 shadow-glow">
-                        <Activity className="text-accent animate-pulse" size={48} />
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">Conducting Deep Research</h3>
-                  <p className="text-brand-400 text-center max-w-lg font-mono text-sm h-6">
-                      {'>'} {LOADING_MESSAGES[loadingMsgIndex]}<span className="animate-pulse">_</span>
-                  </p>
+          {/* Logs / Progress View */}
+          {(loading || (report && report.logs && report.logs.length > 0)) && (
+              <div className={`${report && report.status === 'COMPLETED' ? 'mb-8' : ''}`}>
+                  {(loading) && (
+                     <div className="flex items-center gap-3 mb-4 text-brand-300">
+                         <div className="relative">
+                            <div className="absolute inset-0 bg-accent rounded-full animate-ping opacity-20"></div>
+                            <Activity className="text-accent animate-pulse relative z-10" size={20} />
+                         </div>
+                         <span className="font-medium">Deep Research Agent Active</span>
+                     </div>
+                  )}
+                  {report && <LogTerminal logs={report.logs} active={loading} />}
               </div>
           )}
 
@@ -286,7 +288,7 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
           )}
 
           {report && report.status === 'COMPLETED' && report.result_json && (
-              <div className="print:text-black">
+              <div className="print:text-black animate-fade-in">
                   <div className="flex justify-between items-center mb-6 pb-4 border-b border-brand-800 print:hidden">
                         <h3 className="text-xl font-bold text-white flex items-center gap-3">
                             <BrainCircuit className="text-brand-400" size={24} />

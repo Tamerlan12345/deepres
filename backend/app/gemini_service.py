@@ -1,11 +1,33 @@
 import json
 import asyncio
+from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models import Report, ReportStatus
 from app.config import settings
 from app.prompts import SYSTEM_PROMPT
 from google import genai
 from google.genai import types
+
+async def append_log(db, report_id, message, stage="processing"):
+    """
+    Appends a log entry to the report's logs field.
+    Note: SQLite specific behavior for JSON updates might require a full replace or specific operators.
+    For simplicity and compatibility, we'll read, append, and update.
+    """
+    # Fetch report again to ensure we have the latest data
+    # In a real async environment with frequent updates, we'd need to be careful about race conditions.
+    # For this task, simple read-modify-write is likely sufficient given single worker per report.
+    report = await db.get(Report, report_id)
+    if report:
+        current_logs = list(report.logs) if report.logs else []
+        new_log = {
+            "timestamp": datetime.now().strftime("%H:%M:%S"),
+            "message": message,
+            "stage": stage
+        }
+        current_logs.append(new_log)
+        report.logs = current_logs
+        await db.commit()
 
 async def process_report(report_id: int, db_session_factory):
     """
@@ -19,14 +41,26 @@ async def process_report(report_id: int, db_session_factory):
         report.status = ReportStatus.PROCESSING
         await db.commit()
 
+        await append_log(db, report_id, f"Начинаю анализ запроса: {report.query}", "starting")
+
         try:
             # 1. Prepare Prompt
             user_query = report.query
 
             # 2. Configure Gemini
             if settings.GEMINI_API_KEY == "dummy_key":
+                await append_log(db, report_id, "Использую тестовый режим (Dummy Key).", "searching")
+
                 # Mock response for dev/test without key
-                await asyncio.sleep(3) # Simulate thinking
+                await asyncio.sleep(2)
+                await append_log(db, report_id, "Сформирован поисковый запрос...", "searching")
+
+                await asyncio.sleep(2)
+                await append_log(db, report_id, "Найдены релевантные источники. Читаю...", "reading")
+
+                await asyncio.sleep(2)
+                await append_log(db, report_id, "Анализирую полученные данные...", "thinking")
+
                 response_text = """
 ## Анализ рынка автострахования
 
@@ -82,6 +116,8 @@ graph TD;
                 # Call interactions.create asynchronously
                 # Using client.aio.interactions.create for agent interactions
                 print(f"Starting Deep Research interaction for report {report_id}...")
+                await append_log(db, report_id, "Запуск Deep Research агента...", "searching")
+
                 interaction = await client.aio.interactions.create(
                     agent=agent_name,
                     input=combined_input,
@@ -89,10 +125,12 @@ graph TD;
                 )
 
                 print(f"Deep Research started. Interaction ID: {interaction.id}")
+                await append_log(db, report_id, "Агент запущен. Ожидание результатов...", "searching")
 
                 # Polling loop
                 start_time = asyncio.get_running_loop().time()
                 timeout = 600  # 10 minutes timeout as per requirements
+                last_log_time = 0
 
                 while True:
                     current_time = asyncio.get_running_loop().time()
@@ -108,6 +146,7 @@ graph TD;
                         # Log error but don't crash unless it's the timeout or fatal
                         # If it's a transient network error, we retry next loop
                         print(f"Warning: Error during polling for report {report_id}: {e}. Retrying...")
+                        await append_log(db, report_id, f"Ошибка связи с API, повторная попытка... ({e})", "retrying")
                         continue
 
                     # Check 'state' (standard) or 'status' (fallback/user specified)
@@ -117,9 +156,15 @@ graph TD;
 
                     status_str = str(status).upper()
 
+                    # Periodic log update to keep frontend alive
+                    if current_time - last_log_time > 20: # Log every 20s approx
+                         await append_log(db, report_id, f"Статус обработки: {status_str}...", "processing")
+                         last_log_time = current_time
+
                     if "PROCESSING" in status_str or "PENDING" in status_str:
                         continue
                     elif "SUCCEEDED" in status_str or "COMPLETED" in status_str:
+                        await append_log(db, report_id, "Обработка завершена успешно. Формирование отчета...", "finished")
                         break
                     elif "FAILED" in status_str:
                         raise Exception(f"Deep Research failed with status: {status_str}")
@@ -146,6 +191,7 @@ graph TD;
                 if not response_text:
                     error_msg = "Model returned empty response."
                     print(f"Error processing report {report_id}: {error_msg}")
+                    await append_log(db, report_id, f"Ошибка: {error_msg}", "failed")
                     report.status = ReportStatus.FAILED
                     report.result_json = {"error": error_msg}
                     await db.commit()
@@ -163,6 +209,7 @@ graph TD;
         except Exception as e:
             # Log error
             print(f"Error processing report {report_id}: {e}")
+            await append_log(db, report_id, f"Критическая ошибка: {str(e)}", "failed")
             report.status = ReportStatus.FAILED
             report.result_json = {"error": str(e)}
             await db.commit()
