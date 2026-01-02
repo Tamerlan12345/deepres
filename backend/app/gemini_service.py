@@ -61,7 +61,7 @@ async def process_report(report_id: int, db_session_factory):
                     background=True
                 )
 
-                print(f"Deep Research started. Interaction Name (ID): {interaction.name}")
+                print(f"Deep Research started. Interaction ID: {interaction.id}")
 
                 # Polling loop
                 start_time = asyncio.get_running_loop().time()
@@ -76,7 +76,7 @@ async def process_report(report_id: int, db_session_factory):
 
                     try:
                         # Check status
-                        interaction = await client.aio.interactions.get(id=interaction.name)
+                        interaction = await client.aio.interactions.get(id=interaction.id)
                     except Exception as e:
                         # Log error but don't crash unless it's the timeout or fatal
                         # If it's a transient network error, we retry next loop
@@ -109,8 +109,12 @@ async def process_report(report_id: int, db_session_factory):
                 try:
                     response_text = output.content.parts[0].text
                 except (AttributeError, IndexError) as e:
-                    print(f"Warning: Failed to access content.parts[0].text: {e}. Dumping output.")
-                    response_text = str(output)
+                    print(f"Warning: Failed to access content.parts[0].text: {e}. Trying fallback.")
+                    try:
+                        response_text = output.text
+                    except AttributeError:
+                        print("Warning: Failed to access output.text. Dumping output.")
+                        response_text = str(output)
 
                 if not response_text:
                     error_msg = "Model returned empty response."
