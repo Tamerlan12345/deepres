@@ -47,38 +47,73 @@ async def process_report(report_id: int, db_session_factory):
                 )
 
                 # Configuration for "Deep Research" behavior
-                model_name = "deep-research-pro-preview-12-2025"
+                agent_name = "deep-research-pro-preview-12-2025"
 
-                # Grounding (Google Search Tool)
-                google_search_tool = types.Tool(
-                    google_search=types.GoogleSearch()
-                )
-
-                # Call generate_content asynchronously
-                # Using client.aio.models.generate_content for true async support
-                response = await client.aio.models.generate_content(
-                    model=model_name,
-                    contents=user_query,
-                    config=types.GenerateContentConfig(
-                        tools=[google_search_tool],
+                # Call interactions.create asynchronously
+                # Using client.aio.interactions.create for agent interactions
+                print(f"Starting Deep Research interaction for report {report_id}...")
+                interaction = await client.aio.interactions.create(
+                    agent=agent_name,
+                    input=user_query,
+                    generation_config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT
-                    )
+                    ),
+                    background=True
                 )
 
-                # Log grounding metadata for debugging/monitoring
-                if response.candidates and response.candidates[0].grounding_metadata:
-                    print(f"Grounding Metadata: {response.candidates[0].grounding_metadata}")
+                print(f"Deep Research started. Interaction Name (ID): {interaction.name}")
 
-                if not response.text:
-                     # Handle safety filters or empty responses
-                     error_msg = "Model returned empty response. Likely triggered safety filters or no information found."
-                     print(f"Error processing report {report_id}: {error_msg}")
-                     report.status = ReportStatus.FAILED
-                     report.result_json = {"error": error_msg}
-                     await db.commit()
-                     return
+                # Polling loop
+                start_time = asyncio.get_running_loop().time()
+                timeout = 600  # 10 minutes timeout as per requirements
 
-                response_text = response.text
+                while True:
+                    current_time = asyncio.get_running_loop().time()
+                    if current_time - start_time > timeout:
+                        raise TimeoutError("Deep Research timed out.")
+
+                    await asyncio.sleep(15)
+
+                    try:
+                        # Check status
+                        interaction = await client.aio.interactions.get(id=interaction.name)
+                    except Exception as e:
+                        # Log error but don't crash unless it's the timeout or fatal
+                        # If it's a transient network error, we retry next loop
+                        print(f"Warning: Error during polling for report {report_id}: {e}. Retrying...")
+                        continue
+
+                    # Check 'state' (standard) or 'status' (fallback/user specified)
+                    status = getattr(interaction, 'state', None)
+                    if status is None:
+                        status = getattr(interaction, 'status', None)
+
+                    status_str = str(status).upper()
+
+                    if "PROCESSING" in status_str or "PENDING" in status_str:
+                        continue
+                    elif "SUCCEEDED" in status_str or "COMPLETED" in status_str:
+                        break
+                    elif "FAILED" in status_str:
+                        raise Exception(f"Deep Research failed with status: {status_str}")
+                    else:
+                        print(f"Unknown status {status_str}, continuing...")
+
+                # Extract result
+                if not interaction.outputs:
+                    raise Exception("Deep Research completed but returned no outputs.")
+
+                # Get the last output as per instructions
+                output = interaction.outputs[-1]
+                response_text = output.content.parts[0].text
+
+                if not response_text:
+                    error_msg = "Model returned empty response."
+                    print(f"Error processing report {report_id}: {error_msg}")
+                    report.status = ReportStatus.FAILED
+                    report.result_json = {"error": error_msg}
+                    await db.commit()
+                    return
 
             # 3. Parse JSON
             # Clean up potential markdown formatting
