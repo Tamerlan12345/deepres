@@ -132,11 +132,21 @@ const JsonChart = ({ json }) => {
     }
 };
 
+import { useNavigate } from 'react-router-dom';
+
 const Dashboard = ({ currentReportId, onNewReport }) => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        navigate('/');
+    }
+  }, [navigate]);
 
   useEffect(() => {
     mermaid.initialize({
