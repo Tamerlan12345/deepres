@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import os
 import logging
 import sys
@@ -71,14 +72,35 @@ project_root = os.path.dirname(backend_dir) # /app
 
 frontend_dist = os.path.join(project_root, "frontend/dist")
 
-if os.path.exists(frontend_dist):
-    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
-else:
-    # Fallback for local development if run from backend root
+# Try to find frontend_dist in likely locations
+if not os.path.exists(frontend_dist):
     frontend_dist_local = os.path.join(backend_dir, "../frontend/dist")
     if os.path.exists(frontend_dist_local):
-         app.mount("/", StaticFiles(directory=frontend_dist_local, html=True), name="frontend")
-    else:
-        @app.get("/")
-        async def root():
-            return {"message": "Centras AI-Agent Backend is running. Frontend not found (dev mode)."}
+        frontend_dist = frontend_dist_local
+
+if os.path.exists(frontend_dist):
+    # 1. Mount /assets specifically
+    assets_dir = os.path.join(frontend_dist, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    # 2. Catch-all route (must be last)
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Protected file serving (prevent path traversal)
+        safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
+        if not safe_path.startswith(frontend_dist):
+            # If attempt to access outside, return index.html (or could be 404/403)
+            return FileResponse(os.path.join(frontend_dist, "index.html"))
+
+        # If file exists, serve it (e.g. favicon.ico, manifest.json in root)
+        if os.path.exists(safe_path) and os.path.isfile(safe_path):
+            return FileResponse(safe_path)
+
+        # Otherwise serve index.html (SPA Fallback)
+        return FileResponse(os.path.join(frontend_dist, "index.html"))
+
+else:
+    @app.get("/")
+    async def root():
+        return {"message": "Centras AI-Agent Backend is running. Frontend not found (dev mode)."}
