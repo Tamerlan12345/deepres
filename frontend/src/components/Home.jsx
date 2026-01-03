@@ -18,6 +18,7 @@ const Home = () => {
     try {
         const res = await axios.post('/api/login', { username, password });
         localStorage.setItem('token', res.data.access_token);
+        localStorage.setItem('admin', res.data.admin);
         navigate('/dashboard');
     } catch (err) {
         console.error(err);

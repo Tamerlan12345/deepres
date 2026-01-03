@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, Enum
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey
 from sqlalchemy.sql import func
 import enum
 from app.database import Base
@@ -19,6 +19,8 @@ class Report(Base):
     result_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    # Новое поле: связь с пользователем
+    id_users = Column(Integer, ForeignKey("users.id"), nullable=True)
 
 class User(Base):
     __tablename__ = "users"
@@ -26,3 +28,5 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    # Новое поле: права администратора (yes/no)
+    admin = Column(String, default="no")

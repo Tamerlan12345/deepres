@@ -16,7 +16,10 @@ const Sidebar = ({ onSelectReport }) => {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get('/api/reports?limit=20');
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/api/reports?limit=20', {
+          headers: { Authorization: `Bearer ${token}` }
+      });
       setHistory(res.data);
     } catch (e) {
       console.error("Failed to fetch history", e);
