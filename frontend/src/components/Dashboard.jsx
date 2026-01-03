@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 const LogTerminal = ({ logs, active }) => {
     if (!logs || logs.length === 0) return null;
     return (
-        <div className="card bg-black/80 border-brand-800 font-mono text-xs md:text-sm p-4 h-64 overflow-y-auto custom-scrollbar mb-6 flex flex-col-reverse max-h-[150px] md:max-h-64">
+        <div className="card bg-black/80 border-brand-800 font-mono text-xs p-4 h-64 overflow-y-auto custom-scrollbar mb-6 flex flex-col-reverse max-h-[200px] md:max-h-64">
             <div>
                 {logs.map((log, i) => (
                     <div key={i} className={`mb-2 ${i === logs.length - 1 && active ? 'text-accent animate-pulse' : 'text-brand-400'}`}>
@@ -39,7 +39,7 @@ const MermaidChart = ({ chart }) => {
       });
     }, [chart, id]);
 
-    return <div className="mermaid-container my-6 flex justify-center bg-brand-900/30 p-4 rounded-lg overflow-x-auto w-full" dangerouslySetInnerHTML={{ __html: svg }} />;
+    return <div className="mermaid-container my-6 flex justify-center bg-brand-900/30 p-4 rounded-lg overflow-x-auto w-full max-w-full" dangerouslySetInnerHTML={{ __html: svg }} />;
 };
 
 const JsonChart = ({ json }) => {
@@ -238,10 +238,23 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
 
       {/* Admin Button */}
       {isAdmin && (
-          <div className="absolute top-6 right-6 z-20 print:hidden">
+          <div className="absolute top-6 right-6 z-20 print:hidden md:block hidden">
               <button
                 onClick={() => setShowUserModal(true)}
                 className="flex items-center gap-2 px-3 py-2 bg-brand-800 hover:bg-brand-700 text-brand-100 rounded border border-brand-600 transition-colors text-sm"
+              >
+                  <UserPlus size={16} />
+                  <span>Create User</span>
+              </button>
+          </div>
+      )}
+
+      {/* Mobile Admin Button (Placed differently for mobile) */}
+      {isAdmin && (
+          <div className="mb-4 md:hidden">
+              <button
+                onClick={() => setShowUserModal(true)}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-brand-800 hover:bg-brand-700 text-brand-100 rounded border border-brand-600 transition-colors text-sm"
               >
                   <UserPlus size={16} />
                   <span>Create User</span>
@@ -307,7 +320,7 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
                     <BrainCircuit className="text-accent" size={28} />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Research Command Center</h2>
+                    <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">Research Command Center</h2>
                     <p className="text-brand-400 text-sm">Autonomous Strategic Agent • Deep Research Pro</p>
                 </div>
             </div>
@@ -319,13 +332,13 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Ask a complex strategic question..."
-                        className="input-field w-full md:pl-14 py-5 text-lg shadow-inner bg-brand-950/50 border-brand-800 focus:border-accent transition-all mb-3 md:mb-0"
+                        className="input-field w-full md:pl-14 py-5 text-base md:text-lg shadow-inner bg-brand-950/50 border-brand-800 focus:border-accent transition-all mb-3 md:mb-0"
                     />
                     <Search className="hidden md:block absolute left-5 top-1/2 -translate-y-1/2 text-brand-500 group-focus-within/input:text-accent transition-colors" size={24} />
                     <button
                         type="submit"
                         disabled={loading || !query.trim()}
-                        className="w-full md:w-auto md:absolute md:right-3 md:top-3 md:bottom-3 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-accent/20"
+                        className="w-full md:w-auto md:absolute md:right-3 md:top-3 md:bottom-3 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-accent/20 relative"
                     >
                         {loading ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} />}
                         <span>Analyze</span>
@@ -333,29 +346,29 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
                 </div>
             </form>
 
-            <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+            <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar scrollbar-hide whitespace-nowrap">
                 <button onClick={() => handleScenario("Анализ динамики активов топ-5 страховых компаний РК за 2024 год.")}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
+                    className="flex items-center gap-2 px-6 py-3 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-sm font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all min-h-[44px]">
                     📊 Стратегия и Рынок
                 </button>
                 <button onClick={() => handleScenario("Сравнение условий и тарифов КАСКО для юридических лиц: Centras, Halyk, Eurasia. Плюсы и минусы.")}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
+                    className="flex items-center gap-2 px-6 py-3 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-sm font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all min-h-[44px]">
                     🚗 Продукт (Авто)
                 </button>
                 <button onClick={() => handleScenario("Перспективы и объем рынка киберстрахования в Казахстане и СНГ: отчеты и прогнозы на 2025.")}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
+                    className="flex items-center gap-2 px-6 py-3 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-sm font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all min-h-[44px]">
                     🚀 Новые ниши
                 </button>
                 <button onClick={() => handleScenario("Обзор жалоб клиентов на ДМС в Казахстане: основные проблемы и рейтинг лояльности.")}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
+                    className="flex items-center gap-2 px-6 py-3 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-sm font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all min-h-[44px]">
                     🏥 Медицина (ДМС)
                 </button>
                 <button onClick={() => handleScenario("Последние постановления НБ РК по страхованию жизни: влияние на достаточность капитала.")}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
+                    className="flex items-center gap-2 px-6 py-3 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-sm font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all min-h-[44px]">
                     ⚖️ Регуляторика
                 </button>
                 <button onClick={() => handleScenario("Статистика выплат по индексному страхованию влаги в зерновых регионах РК за прошлый сезон.")}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
+                    className="flex items-center gap-2 px-6 py-3 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-sm font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all min-h-[44px]">
                     🌾 Агро
                 </button>
             </div>
@@ -393,19 +406,19 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
                             <BrainCircuit className="text-brand-400" size={24} />
                             Strategic Report
                         </h3>
-                        <button onClick={handlePrint} className="btn-secondary flex items-center gap-2 text-sm">
+                        <button onClick={handlePrint} className="hidden md:flex btn-secondary items-center gap-2 text-sm">
                             <Download size={16} /> Print / Save PDF
                         </button>
                     </div>
 
-                  <div className="prose prose-lg prose-invert prose-blue max-w-none">
+                  <div className="prose prose-sm md:prose-lg prose-invert prose-blue max-w-none">
                       <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
                               table({node, children, ...props}) {
                                     return (
-                                        <div className="overflow-x-auto mb-6 border border-brand-800 rounded-lg">
-                                            <table className="w-full text-left border-collapse" {...props}>
+                                        <div className="overflow-x-auto w-full mb-6 border border-brand-800 rounded-lg">
+                                            <table className="w-full text-left border-collapse min-w-[600px]" {...props}>
                                                 {children}
                                             </table>
                                         </div>

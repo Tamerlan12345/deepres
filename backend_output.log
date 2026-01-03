@@ -1,0 +1,140 @@
+INFO:     Started server process [9746]
+INFO:     Waiting for application startup.
+2026-01-03 18:12:56,947 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:12:56,947 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reports")
+2026-01-03 18:12:56,947 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 18:12:56,949 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 18:12:56,949 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 18:12:56,950 INFO sqlalchemy.engine.Engine COMMIT
+2026-01-03 18:12:56,951 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:12:56,956 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:12:56,956 INFO sqlalchemy.engine.Engine [generated in 0.00021s] ('admin',)
+Creating default admin user...
+2026-01-03 18:12:57,298 INFO sqlalchemy.engine.Engine INSERT INTO users (username, hashed_password, admin) VALUES (?, ?, ?)
+2026-01-03 18:12:57,299 INFO sqlalchemy.engine.Engine [generated in 0.00030s] ('admin', '$2b$12$3LEUKXqNxl9nsI/DAmdGZ.ksVWjBB9kQ53ZdaeBntv2oB/HqTUNQ.', 'yes')
+2026-01-03 18:12:57,300 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+Admin user created (login: admin / password: admin).
+2026-01-03 18:13:04,676 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:13:04,676 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:13:04,676 INFO sqlalchemy.engine.Engine [cached since 7.72s ago] ('admin',)
+INFO:     127.0.0.1:48848 - "POST /api/login HTTP/1.1" 200 OK
+2026-01-03 18:13:04,995 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:13:05,030 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:13:05,030 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:13:05,030 INFO sqlalchemy.engine.Engine [cached since 8.074s ago] ('admin',)
+2026-01-03 18:13:05,035 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at, reports.id_users
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2026-01-03 18:13:05,035 INFO sqlalchemy.engine.Engine [generated in 0.00029s] (20, 0)
+INFO:     127.0.0.1:48862 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2026-01-03 18:13:05,038 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:13:05,045 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:13:05,045 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:13:05,045 INFO sqlalchemy.engine.Engine [cached since 8.09s ago] ('admin',)
+2026-01-03 18:13:05,047 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at, reports.id_users
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2026-01-03 18:13:05,047 INFO sqlalchemy.engine.Engine [cached since 0.01259s ago] (20, 0)
+INFO:     127.0.0.1:48866 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2026-01-03 18:13:05,049 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:13:15,042 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:13:15,043 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:13:15,043 INFO sqlalchemy.engine.Engine [cached since 18.09s ago] ('admin',)
+2026-01-03 18:13:15,046 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at, reports.id_users
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2026-01-03 18:13:15,047 INFO sqlalchemy.engine.Engine [cached since 10.01s ago] (20, 0)
+INFO:     127.0.0.1:43356 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2026-01-03 18:13:15,050 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:13:25,037 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:13:25,037 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:13:25,037 INFO sqlalchemy.engine.Engine [cached since 28.08s ago] ('admin',)
+2026-01-03 18:13:25,039 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at, reports.id_users
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2026-01-03 18:13:25,039 INFO sqlalchemy.engine.Engine [cached since 20s ago] (20, 0)
+INFO:     127.0.0.1:59622 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2026-01-03 18:13:25,041 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:13:35,037 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:13:35,038 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:13:35,038 INFO sqlalchemy.engine.Engine [cached since 38.08s ago] ('admin',)
+2026-01-03 18:13:35,040 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at, reports.id_users
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2026-01-03 18:13:35,040 INFO sqlalchemy.engine.Engine [cached since 30.01s ago] (20, 0)
+INFO:     127.0.0.1:52900 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2026-01-03 18:13:35,042 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:13:53,396 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:13:53,396 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:13:53,396 INFO sqlalchemy.engine.Engine [cached since 56.44s ago] ('admin',)
+INFO:     127.0.0.1:35952 - "POST /api/login HTTP/1.1" 200 OK
+2026-01-03 18:13:53,708 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:13:53,727 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:13:53,728 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:13:53,728 INFO sqlalchemy.engine.Engine [cached since 56.77s ago] ('admin',)
+2026-01-03 18:13:53,729 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at, reports.id_users
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2026-01-03 18:13:53,730 INFO sqlalchemy.engine.Engine [cached since 48.69s ago] (20, 0)
+INFO:     127.0.0.1:35956 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2026-01-03 18:13:53,731 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:13:53,736 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:13:53,736 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:13:53,736 INFO sqlalchemy.engine.Engine [cached since 56.78s ago] ('admin',)
+2026-01-03 18:13:53,738 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at, reports.id_users
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2026-01-03 18:13:53,738 INFO sqlalchemy.engine.Engine [cached since 48.7s ago] (20, 0)
+INFO:     127.0.0.1:35972 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2026-01-03 18:13:53,739 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:16:06,738 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:16:06,738 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:16:06,738 INFO sqlalchemy.engine.Engine [cached since 189.8s ago] ('admin',)
+INFO:     127.0.0.1:37770 - "POST /api/login HTTP/1.1" 200 OK
+2026-01-03 18:16:07,049 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:16:07,070 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:16:07,070 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:16:07,070 INFO sqlalchemy.engine.Engine [cached since 190.1s ago] ('admin',)
+2026-01-03 18:16:07,073 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at, reports.id_users
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2026-01-03 18:16:07,073 INFO sqlalchemy.engine.Engine [cached since 182s ago] (20, 0)
+INFO:     127.0.0.1:37774 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2026-01-03 18:16:07,074 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 18:16:07,079 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 18:16:07,079 INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.hashed_password, users.admin
+FROM users
+WHERE users.username = ?
+2026-01-03 18:16:07,079 INFO sqlalchemy.engine.Engine [cached since 190.1s ago] ('admin',)
+2026-01-03 18:16:07,081 INFO sqlalchemy.engine.Engine SELECT reports.id, reports."query", reports.status, reports.logs, reports.result_json, reports.created_at, reports.updated_at, reports.id_users
+FROM reports ORDER BY reports.created_at DESC
+ LIMIT ? OFFSET ?
+2026-01-03 18:16:07,081 INFO sqlalchemy.engine.Engine [cached since 182s ago] (20, 0)
+INFO:     127.0.0.1:37790 - "GET /api/reports?limit=20 HTTP/1.1" 200 OK
+2026-01-03 18:16:07,083 INFO sqlalchemy.engine.Engine ROLLBACK

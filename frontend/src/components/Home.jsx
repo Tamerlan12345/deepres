@@ -32,7 +32,7 @@ const Home = () => {
        {/* Background Glow */}
        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[100px] -z-10 animate-pulse-slow"></div>
 
-       <div className="w-full max-w-md p-8 bg-brand-900/50 backdrop-blur-xl border border-brand-800 rounded-2xl shadow-2xl animate-fade-in-up">
+       <div className="w-full max-w-md p-8 bg-brand-900/50 backdrop-blur-xl border border-brand-800 rounded-2xl shadow-2xl animate-fade-in-up mx-4">
           <div className="flex flex-col items-center mb-8">
                <div className="w-16 h-16 bg-brand-800 rounded-2xl flex items-center justify-center mb-4 border border-brand-700 shadow-glow">
                    <BrainCircuit className="text-accent" size={32} />
