@@ -3,15 +3,15 @@ import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import mermaid from 'mermaid';
-import { Download, Search, RefreshCw, Zap, Activity, AlertCircle, BrainCircuit } from 'lucide-react';
+import { Download, Search, RefreshCw, Zap, Activity, AlertCircle, BrainCircuit, UserPlus, X } from 'lucide-react';
 import {
     BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 const LogTerminal = ({ logs, active }) => {
     if (!logs || logs.length === 0) return null;
-
     return (
         <div className="card bg-black/80 border-brand-800 font-mono text-xs md:text-sm p-4 h-64 overflow-y-auto custom-scrollbar mb-6 flex flex-col-reverse max-h-[150px] md:max-h-64">
             <div>
@@ -21,11 +21,6 @@ const LogTerminal = ({ logs, active }) => {
                         <span>{log.message}</span>
                     </div>
                 ))}
-                {active && (
-                    <div className="text-accent mt-2">
-                        <span className="animate-pulse">_</span>
-                    </div>
-                )}
             </div>
         </div>
     );
@@ -132,32 +127,40 @@ const JsonChart = ({ json }) => {
     }
 };
 
-import { useNavigate } from 'react-router-dom';
-
 const Dashboard = ({ currentReportId, onNewReport }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // State for Create User Modal
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [userMsg, setUserMsg] = useState("");
+
+  // Helper for Auth Headers
+  const getAuthHeader = () => {
+      const token = localStorage.getItem('token');
+      return { headers: { Authorization: `Bearer ${token}` } };
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const adminFlag = localStorage.getItem('admin'); // Получаем флаг при загрузке
     if (!token) {
         navigate('/');
     }
+    setIsAdmin(adminFlag === 'yes');
   }, [navigate]);
 
   useEffect(() => {
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: 'dark',
-      securityLevel: 'loose',
-      fontFamily: 'Inter'
-    });
+    mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
   }, []);
 
-  // Poll for report status if it's processing
+  // Poll for report status
   useEffect(() => {
     let interval;
     if (currentReportId) {
@@ -165,14 +168,15 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
       fetchReport(currentReportId);
       interval = setInterval(() => {
         fetchReport(currentReportId);
-      }, 2000); // Faster polling for smoother log updates
+      }, 2000);
     }
     return () => clearInterval(interval);
   }, [currentReportId]);
 
   const fetchReport = async (id) => {
     try {
-      const res = await axios.get(`/api/reports/${id}`);
+      // Добавляем заголовок авторизации
+      const res = await axios.get(`/api/reports/${id}`, getAuthHeader());
       const data = res.data;
       setReport(data);
 
@@ -186,6 +190,7 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
       }
     } catch (e) {
         console.error(e);
+        if (e.response && e.response.status === 401) navigate('/');
         setError("Could not fetch report");
         setLoading(false);
     }
@@ -199,27 +204,100 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
     setReport(null);
     setError(null);
     try {
-      const res = await axios.post('/api/reports', { query });
+      const res = await axios.post('/api/reports', { query }, getAuthHeader());
       onNewReport(res.data.id);
       setQuery("");
     } catch (e) {
+      if (e.response && e.response.status === 401) navigate('/');
       setError("Failed to create report");
       setLoading(false);
     }
   };
 
-  const handleScenario = (text) => {
-    setQuery(text);
+  const handleCreateUser = async (e) => {
+      e.preventDefault();
+      try {
+          await axios.post('/api/admin/users', {
+              username: newUsername,
+              password: newPassword
+          }, getAuthHeader());
+          setUserMsg("User created successfully!");
+          setNewUsername("");
+          setNewPassword("");
+          setTimeout(() => { setShowUserModal(false); setUserMsg(""); }, 1500);
+      } catch (err) {
+          setUserMsg("Error: " + (err.response?.data?.detail || "Failed"));
+      }
   };
 
-  const handlePrint = () => {
-      window.print();
-  };
+  const handleScenario = (text) => setQuery(text);
+  const handlePrint = () => window.print();
 
   return (
-    <div className="max-w-6xl mx-auto pb-12 pt-6 px-4 md:px-6">
-      {/* Search / Hero Section */}
-      <div className="card mb-8 relative overflow-hidden group print:hidden">
+    <div className="max-w-6xl mx-auto pb-12 pt-6 px-4 md:px-6 relative">
+
+      {/* Admin Button */}
+      {isAdmin && (
+          <div className="absolute top-6 right-6 z-20 print:hidden">
+              <button
+                onClick={() => setShowUserModal(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-brand-800 hover:bg-brand-700 text-brand-100 rounded border border-brand-600 transition-colors text-sm"
+              >
+                  <UserPlus size={16} />
+                  <span>Create User</span>
+              </button>
+          </div>
+      )}
+
+      {/* Create User Modal */}
+      {showUserModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+              <div className="bg-brand-900 border border-brand-700 rounded-xl p-6 w-full max-w-md shadow-2xl relative">
+                  <button onClick={() => setShowUserModal(false)} className="absolute top-4 right-4 text-brand-400 hover:text-white">
+                      <X size={20} />
+                  </button>
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                      <UserPlus className="text-accent" /> Create New User
+                  </h3>
+
+                  <form onSubmit={handleCreateUser} className="space-y-4">
+                      <div>
+                          <label className="block text-sm text-brand-300 mb-1">Username</label>
+                          <input
+                              type="text"
+                              value={newUsername}
+                              onChange={e => setNewUsername(e.target.value)}
+                              className="w-full bg-brand-950 border border-brand-800 rounded p-2 text-white focus:border-accent outline-none"
+                              required
+                          />
+                      </div>
+                      <div>
+                          <label className="block text-sm text-brand-300 mb-1">Password</label>
+                          <input
+                              type="password"
+                              value={newPassword}
+                              onChange={e => setNewPassword(e.target.value)}
+                              className="w-full bg-brand-950 border border-brand-800 rounded p-2 text-white focus:border-accent outline-none"
+                              required
+                          />
+                      </div>
+
+                      {userMsg && (
+                          <div className={`text-sm p-2 rounded ${userMsg.includes('Error') ? 'bg-red-900/50 text-red-200' : 'bg-green-900/50 text-green-200'}`}>
+                              {userMsg}
+                          </div>
+                      )}
+
+                      <button type="submit" className="w-full py-2 bg-accent hover:bg-accent-hover text-white rounded font-bold transition-colors">
+                          Create User
+                      </button>
+                  </form>
+              </div>
+          </div>
+      )}
+
+      {/* Hero Section */}
+      <div className="card mb-8 relative overflow-hidden group print:hidden mt-8 md:mt-0">
          {/* Background decoration */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-accent/15 transition-all duration-700"></div>
 
@@ -256,7 +334,7 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
             </form>
 
             <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
-                <button onClick={() => handleScenario("Анализ динамики активов топ-5 страховых компаний РК за 2024 год (сравнение с 2023).")}
+                <button onClick={() => handleScenario("Анализ динамики активов топ-5 страховых компаний РК за 2024 год.")}
                     className="flex items-center gap-2 px-4 py-2 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-xs font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all">
                     📊 Стратегия и Рынок
                 </button>
@@ -286,7 +364,6 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
 
       {/* Report View */}
       <div className="space-y-8 animate-fade-in-up">
-          {/* Logs / Progress View */}
           {(loading || (report && report.logs && report.logs.length > 0)) && (
               <div className={`${report && report.status === 'COMPLETED' ? 'mb-8' : ''}`}>
                   {(loading) && (
@@ -321,11 +398,7 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
                         </button>
                     </div>
 
-                  {/* Markdown Content */}
-                  <div className="prose prose-lg prose-invert prose-blue max-w-none
-                    prose-headings:text-white prose-p:text-brand-300 prose-strong:text-brand-100 prose-li:text-brand-300
-                    print:prose-p:text-black print:prose-headings:text-black print:prose-li:text-black
-                    table-auto overflow-x-auto block">
+                  <div className="prose prose-lg prose-invert prose-blue max-w-none">
                       <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
