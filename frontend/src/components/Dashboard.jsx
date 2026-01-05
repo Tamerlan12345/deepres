@@ -367,9 +367,9 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
                     className="flex items-center gap-2 px-6 py-3 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-sm font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all min-h-[44px]">
                     ⚖️ Регуляторика
                 </button>
-                <button onClick={() => handleScenario("Статистика выплат по индексному страхованию влаги в зерновых регионах РК за прошлый сезон.")}
+                <button onClick={() => handleScenario("Статистика выплат по ОС ГПО ВТС казахстан, тренды и выводы за последнее время")}
                     className="flex items-center gap-2 px-6 py-3 bg-brand-800/50 text-brand-300 border border-brand-700 rounded-full text-sm font-medium whitespace-nowrap hover:bg-brand-800 hover:text-white hover:border-brand-600 transition-all min-h-[44px]">
-                    🌾 Агро
+                    🚗 Выплаты тренды по ОС ГПО ВТС
                 </button>
             </div>
         </div>
