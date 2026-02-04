@@ -14,20 +14,24 @@ async def append_log(db, report_id, message, stage="processing"):
     Note: SQLite specific behavior for JSON updates might require a full replace or specific operators.
     For simplicity and compatibility, we'll read, append, and update.
     """
-    # Fetch report again to ensure we have the latest data
-    # In a real async environment with frequent updates, we'd need to be careful about race conditions.
-    # For this task, simple read-modify-write is likely sufficient given single worker per report.
-    report = await db.get(Report, report_id)
-    if report:
-        current_logs = list(report.logs) if report.logs else []
-        new_log = {
-            "timestamp": datetime.now().strftime("%H:%M:%S"),
-            "message": message,
-            "stage": stage
-        }
-        current_logs.append(new_log)
-        report.logs = current_logs
-        await db.commit()
+    try:
+        # Fetch report again to ensure we have the latest data
+        # In a real async environment with frequent updates, we'd need to be careful about race conditions.
+        # For this task, simple read-modify-write is likely sufficient given single worker per report.
+        report = await db.get(Report, report_id)
+        if report:
+            current_logs = list(report.logs) if report.logs else []
+            new_log = {
+                "timestamp": datetime.now().strftime("%H:%M:%S"),
+                "message": message,
+                "stage": stage
+            }
+            current_logs.append(new_log)
+            report.logs = current_logs
+            await db.commit()
+    except Exception as e:
+        # Log error to console but don't break the main process
+        print(f"Error appending log for report {report_id}: {e}")
 
 async def process_report(report_id: int, db_session_factory):
     """
@@ -146,6 +150,8 @@ graph TD;
                         # Log error but don't crash unless it's the timeout or fatal
                         # If it's a transient network error, we retry next loop
                         print(f"Warning: Error during polling for report {report_id}: {e}. Retrying...")
+                        import traceback
+                        traceback.print_exc()
                         await append_log(db, report_id, f"Ошибка связи с API, повторная попытка... ({e})", "retrying")
                         continue
 
@@ -170,6 +176,7 @@ graph TD;
                         raise Exception(f"Deep Research failed with status: {status_str}")
                     else:
                         print(f"Unknown status {status_str}, continuing...")
+                        await append_log(db, report_id, f"Неизвестный статус: {status_str}. Детали: {str(interaction)}", "unknown_status")
 
                 # Extract result
                 if not interaction.outputs:
