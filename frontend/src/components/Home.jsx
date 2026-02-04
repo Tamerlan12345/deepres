@@ -34,13 +34,14 @@ const Home = () => {
 
        <div className="w-full max-w-md p-8 bg-brand-900/50 backdrop-blur-xl border border-brand-800 rounded-2xl shadow-2xl animate-fade-in-up mx-4">
           <div className="flex flex-col items-center mb-8">
-        <div className="w-64 h-24 bg-white rounded-2xl flex items-center justify-center mb-8 p-4 shadow-glow border border-brand-200">
-       <img 
-        src="https://centras.kz/wp-content/uploads/2023/12/centras-insurance-col.png" 
-        alt="Centras Logo" 
-        className="w-full h-full object-contain" 
-         />
-        </div>
+      <div className="mb-8 p-4 relative group">
+   <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+   <img 
+    src="https://centras.kz/wp-content/uploads/2023/12/centras-insurance-col.png" 
+    alt="Centras Logo" 
+    className="relative h-16 w-auto object-contain brightness-0 invert opacity-90 group-hover:opacity-100 transition-all duration-300 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" 
+   />
+</div>
                <h1 className="text-2xl font-bold tracking-tight">Centras <span className="text-brand-400">DeepResearch</span></h1>
                <p className="text-brand-500 text-sm mt-2">Вход в систему</p>
           </div>
