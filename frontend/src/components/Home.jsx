@@ -35,7 +35,7 @@ const Home = () => {
        <div className="w-full max-w-md p-8 bg-brand-900/50 backdrop-blur-xl border border-brand-800 rounded-2xl shadow-2xl animate-fade-in-up mx-4">
           <div className="flex flex-col items-center mb-8">
                <div className="w-16 h-16 bg-brand-800 rounded-2xl flex items-center justify-center mb-4 border border-brand-700 shadow-glow">
-                   <img src="https://centras.kz/wp-content/uploads/2023/12/centras-insurance-col.png" alt="Logo" className="w-10 h-10 object-contain" />
+                   <img src="https://centras.kz/wp-content/uploads/2023/12/centras-insurance-col.png" alt="Logo" className="w-30 h-30 object-contain" />
                </div>
                <h1 className="text-2xl font-bold tracking-tight">Centras <span className="text-brand-400">DeepResearch</span></h1>
                <p className="text-brand-500 text-sm mt-2">Вход в систему</p>
