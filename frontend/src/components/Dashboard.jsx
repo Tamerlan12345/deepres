@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
-const LogTerminal = ({ logs, active }) => {
+const LogTerminal = memo(({ logs, active }) => {
     if (!logs || logs.length === 0) return null;
     return (
         <div className="card bg-black/80 border-brand-800 font-mono text-xs p-4 h-64 overflow-y-auto custom-scrollbar mb-6 flex flex-col-reverse max-h-[200px] md:max-h-64">
@@ -24,11 +24,11 @@ const LogTerminal = ({ logs, active }) => {
             </div>
         </div>
     );
-};
+});
 
-const MermaidChart = ({ chart }) => {
+const MermaidChart = memo(({ chart }) => {
     const [svg, setSvg] = useState('');
-    const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+    const [id] = useState(() => `mermaid-${Math.random().toString(36).substr(2, 9)}`);
 
     useEffect(() => {
       mermaid.render(id, chart).then((result) => {
@@ -40,90 +40,150 @@ const MermaidChart = ({ chart }) => {
     }, [chart, id]);
 
     return <div className="mermaid-container my-6 flex justify-center bg-brand-900/30 p-4 rounded-lg overflow-x-auto w-full max-w-full" dangerouslySetInnerHTML={{ __html: svg }} />;
-};
+});
 
-const JsonChart = ({ json }) => {
-    try {
-        const data = JSON.parse(json);
-        const { type, title, data: chartData } = data;
+const JsonChart = memo(({ json }) => {
+    const { data, error } = useMemo(() => {
+        try {
+            return { data: JSON.parse(json), error: null };
+        } catch (e) {
+            return { data: null, error: e.message };
+        }
+    }, [json]);
 
-        const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+    if (error) {
+        return <div className="text-error border border-error/20 bg-error-bg p-3 rounded text-sm my-4">Error parsing chart data: {error}</div>;
+    }
 
-        const CustomTooltip = ({ active, payload, label }) => {
-            if (active && payload && payload.length) {
+    const { type, title, data: chartData } = data;
+
+    const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-brand-900 border border-brand-700 p-2 rounded shadow-lg text-sm">
+                    <p className="font-bold text-white">{label}</p>
+                    <p className="text-accent">{`${payload[0].name}: ${payload[0].value}`}</p>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    const renderChart = () => {
+            if (type === 'bar') {
+            return (
+                <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                        <XAxis dataKey="name" stroke="#94a3b8" tick={{fontSize: 12}} />
+                        <YAxis stroke="#94a3b8" tick={{fontSize: 12}} />
+                        <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}} />
+                        <Legend wrapperStyle={{paddingTop: '10px'}} />
+                        <Bar dataKey="value" fill="#3b82f6" name={title} radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                </ResponsiveContainer>
+            );
+        } else if (type === 'line') {
                 return (
-                    <div className="bg-brand-900 border border-brand-700 p-2 rounded shadow-lg text-sm">
-                        <p className="font-bold text-white">{label}</p>
-                        <p className="text-accent">{`${payload[0].name}: ${payload[0].value}`}</p>
-                    </div>
+                <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                        <XAxis dataKey="name" stroke="#94a3b8" tick={{fontSize: 12}} />
+                        <YAxis stroke="#94a3b8" tick={{fontSize: 12}} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend wrapperStyle={{paddingTop: '10px'}} />
+                        <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} name={title} dot={{r: 4, fill:'#3b82f6'}} activeDot={{r: 6}} />
+                    </LineChart>
+                </ResponsiveContainer>
                 );
-            }
-            return null;
-        };
+        } else if (type === 'pie') {
+            return (
+                <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                        <Pie
+                            data={chartData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                        >
+                            {chartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                    </PieChart>
+                </ResponsiveContainer>
+            );
+        }
+        return <div className="text-brand-400 p-4 text-center">Unsupported chart type: {type}</div>
+    }
 
-        const renderChart = () => {
-             if (type === 'bar') {
-                return (
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                            <XAxis dataKey="name" stroke="#94a3b8" tick={{fontSize: 12}} />
-                            <YAxis stroke="#94a3b8" tick={{fontSize: 12}} />
-                            <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}} />
-                            <Legend wrapperStyle={{paddingTop: '10px'}} />
-                            <Bar dataKey="value" fill="#3b82f6" name={title} radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                );
-            } else if (type === 'line') {
-                 return (
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                            <XAxis dataKey="name" stroke="#94a3b8" tick={{fontSize: 12}} />
-                            <YAxis stroke="#94a3b8" tick={{fontSize: 12}} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Legend wrapperStyle={{paddingTop: '10px'}} />
-                            <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} name={title} dot={{r: 4, fill:'#3b82f6'}} activeDot={{r: 6}} />
-                        </LineChart>
-                    </ResponsiveContainer>
-                 );
-            } else if (type === 'pie') {
-                return (
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie
-                                data={chartData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                outerRadius={100}
-                                fill="#8884d8"
-                                dataKey="value"
-                                nameKey="name"
-                            >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
-                );
-            }
-            return <div className="text-brand-400 p-4 text-center">Unsupported chart type: {type}</div>
+    return (
+        <div className="card border-brand-800 bg-brand-900/50 p-6 my-8 break-inside-avoid w-full">
+            <h4 className="text-lg font-bold text-white mb-4 text-center">{title}</h4>
+            {renderChart()}
+        </div>
+    );
+});
+
+const remarkPlugins = [remarkGfm];
+
+const markdownComponents = {
+    table({node, children, ...props}) {
+        return (
+            <div className="overflow-x-auto w-full mb-6 border border-brand-800 rounded-lg">
+                <table className="w-full text-left border-collapse min-w-[600px]" {...props}>
+                    {children}
+                </table>
+            </div>
+        )
+    },
+    thead({node, children, ...props}) {
+        return <thead className="bg-brand-900 text-brand-100" {...props}>{children}</thead>
+    },
+    tbody({node, children, ...props}) {
+        return <tbody className="divide-y divide-brand-800" {...props}>{children}</tbody>
+    },
+    tr({node, children, ...props}) {
+        return <tr className="hover:bg-brand-900/50 transition-colors" {...props}>{children}</tr>
+    },
+    th({node, children, ...props}) {
+        return <th className="px-4 py-3 font-semibold text-sm uppercase tracking-wider" {...props}>{children}</th>
+    },
+    td({node, children, ...props}) {
+        return <td className="px-4 py-3 text-sm text-brand-300" {...props}>{children}</td>
+    },
+    code({node, inline, className, children, ...props}) {
+        const match = /language-(\w+)(?::(\w+))?/.exec(className || '')
+        const language = match ? match[1] : ''
+
+        if (!inline && language === 'mermaid') {
+            return <MermaidChart chart={String(children).replace(/\n$/, '')} />
         }
 
-        return (
-            <div className="card border-brand-800 bg-brand-900/50 p-6 my-8 break-inside-avoid w-full">
-                <h4 className="text-lg font-bold text-white mb-4 text-center">{title}</h4>
-                {renderChart()}
-            </div>
-        );
-    } catch (e) {
-        return <div className="text-error border border-error/20 bg-error-bg p-3 rounded text-sm my-4">Error parsing chart data: {e.message}</div>;
+        if (!inline && language === 'json' && className.includes('language-json:chart')) {
+            return <JsonChart json={String(children).replace(/\n$/, '')} />
+        }
+
+        return !inline ? (
+            <pre className="bg-brand-900/50 p-4 rounded-lg overflow-x-auto border border-brand-800 print:border-gray-300 print:bg-gray-50">
+                <code className={className} {...props}>
+                    {children}
+                </code>
+            </pre>
+        ) : (
+            <code className="bg-brand-900/50 px-1.5 py-0.5 rounded text-accent font-mono text-sm print:bg-gray-100 print:text-black" {...props}>
+                {children}
+            </code>
+        )
     }
 };
 
@@ -413,57 +473,8 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
 
                   <div className="prose prose-sm md:prose-lg prose-invert prose-blue max-w-none">
                       <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                              table({node, children, ...props}) {
-                                    return (
-                                        <div className="overflow-x-auto w-full mb-6 border border-brand-800 rounded-lg">
-                                            <table className="w-full text-left border-collapse min-w-[600px]" {...props}>
-                                                {children}
-                                            </table>
-                                        </div>
-                                    )
-                              },
-                              thead({node, children, ...props}) {
-                                  return <thead className="bg-brand-900 text-brand-100" {...props}>{children}</thead>
-                              },
-                              tbody({node, children, ...props}) {
-                                  return <tbody className="divide-y divide-brand-800" {...props}>{children}</tbody>
-                              },
-                              tr({node, children, ...props}) {
-                                  return <tr className="hover:bg-brand-900/50 transition-colors" {...props}>{children}</tr>
-                              },
-                              th({node, children, ...props}) {
-                                  return <th className="px-4 py-3 font-semibold text-sm uppercase tracking-wider" {...props}>{children}</th>
-                              },
-                              td({node, children, ...props}) {
-                                  return <td className="px-4 py-3 text-sm text-brand-300" {...props}>{children}</td>
-                              },
-                              code({node, inline, className, children, ...props}) {
-                                  const match = /language-(\w+)(?::(\w+))?/.exec(className || '')
-                                  const language = match ? match[1] : ''
-
-                                  if (!inline && language === 'mermaid') {
-                                      return <MermaidChart chart={String(children).replace(/\n$/, '')} />
-                                  }
-
-                                  if (!inline && language === 'json' && className.includes('language-json:chart')) {
-                                      return <JsonChart json={String(children).replace(/\n$/, '')} />
-                                  }
-
-                                  return !inline ? (
-                                      <pre className="bg-brand-900/50 p-4 rounded-lg overflow-x-auto border border-brand-800 print:border-gray-300 print:bg-gray-50">
-                                          <code className={className} {...props}>
-                                              {children}
-                                          </code>
-                                      </pre>
-                                  ) : (
-                                      <code className="bg-brand-900/50 px-1.5 py-0.5 rounded text-accent font-mono text-sm print:bg-gray-100 print:text-black" {...props}>
-                                          {children}
-                                      </code>
-                                  )
-                              }
-                          }}
+                          remarkPlugins={remarkPlugins}
+                          components={markdownComponents}
                       >
                           {report.result_json.markdown || report.result_json.detailed_analysis || "No content"}
                       </ReactMarkdown>
