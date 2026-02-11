@@ -1,5 +1,12 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 import os
+import secrets
+import sys
+
+def get_default_secret_key():
+    print("WARNING: SECRET_KEY not set in environment or .env file. Using a temporary random key. Sessions will not persist on restart.", file=sys.stderr)
+    return secrets.token_hex(32)
 
 class Settings(BaseSettings):
     GEMINI_API_KEY: str = "dummy_key"
@@ -7,7 +14,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
 
     # Security
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7")
+    SECRET_KEY: str = Field(default_factory=get_default_secret_key)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
