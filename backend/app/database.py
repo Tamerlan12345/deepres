@@ -3,13 +3,16 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from app.config import settings
 
 # --- FIX START ---
+def get_async_database_url(database_url: str) -> str:
+    if database_url.startswith("postgres://"):
+        return database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif database_url.startswith("postgresql://") and "asyncpg" not in database_url:
+        return database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return database_url
+
 # Автоматическая замена драйвера на асинхронный (asyncpg), 
 # если платформа передала стандартный URL.
-database_url = settings.DATABASE_URL
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
-elif database_url.startswith("postgresql://") and "asyncpg" not in database_url:
-    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+database_url = get_async_database_url(settings.DATABASE_URL)
 # --- FIX END ---
 
 engine = create_async_engine(database_url, echo=True)
