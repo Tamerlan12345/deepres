@@ -222,15 +222,27 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
 
   // Poll for report status
   useEffect(() => {
-    let interval;
+    let timeoutId;
+    let isMounted = true;
+
+    const poll = async () => {
+      if (!currentReportId) return;
+      const data = await fetchReport(currentReportId);
+
+      if (isMounted && data && data.status !== 'COMPLETED' && data.status !== 'FAILED') {
+        timeoutId = setTimeout(poll, 2000);
+      }
+    };
+
     if (currentReportId) {
       setLoading(true);
-      fetchReport(currentReportId);
-      interval = setInterval(() => {
-        fetchReport(currentReportId);
-      }, 2000);
+      poll();
     }
-    return () => clearInterval(interval);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, [currentReportId]);
 
   const fetchReport = async (id) => {
@@ -248,11 +260,13 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
       } else {
         setLoading(true);
       }
+      return data;
     } catch (e) {
         console.error(e);
         if (e.response && e.response.status === 401) navigate('/');
         setError("Could not fetch report");
         setLoading(false);
+        return null;
     }
   };
 
