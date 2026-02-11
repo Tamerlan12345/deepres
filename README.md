@@ -22,6 +22,7 @@ The system is designed as a Monolith for easy deployment on Railway.
 6. Go to **Settings** -> **Variables**:
     - `DATABASE_URL`: (Automatically added by the plugin, usually)
     - `GEMINI_API_KEY`: [Your Gemini API Key]
+    - `SECRET_KEY`: [A random string for JWT encryption. Required for production stability.]
 7. The deployment should start automatically.
 
 ## Local Development
@@ -31,7 +32,7 @@ The system is designed as a Monolith for easy deployment on Railway.
    pip install -r requirements.txt
    uvicorn app.main:app --reload
    ```
-   (Make sure you have a local postgres or update DATABASE_URL in `.env`)
+   (Make sure you have a local postgres or update DATABASE_URL in `.env`. You can also set `SECRET_KEY` in `.env` to persist sessions across restarts.)
 
 2. **Frontend:**
    ```bash
