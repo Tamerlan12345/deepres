@@ -25,9 +25,8 @@ async def get_db():
 
 async def init_db():
     async with engine.begin() as conn:
-        # Plan-minimum: Drop tables if using SQLite (dev environment) to ensure schema is up to date
-        # Check if we are using sqlite
-        if "sqlite" in settings.DATABASE_URL:
+        # Check if we should reset the database (e.g. for development)
+        if settings.RESET_DB:
             await conn.run_sync(Base.metadata.drop_all)
 
         await conn.run_sync(Base.metadata.create_all)
