@@ -205,6 +205,7 @@ async def list_reports(
 # PDF экспорт (оставил как есть, добавил только получение пользователя для совместимости, но без строгой проверки пока)
 from fastapi.responses import Response
 from weasyprint import HTML
+from starlette.concurrency import run_in_threadpool
 
 @router.get("/reports/{report_id}/pdf")
 async def export_pdf(report_id: int, db: AsyncSession = Depends(get_db)):
@@ -245,5 +246,9 @@ async def export_pdf(report_id: int, db: AsyncSession = Depends(get_db)):
     </body>
     </html>
     """
-    pdf_bytes = HTML(string=html_content).write_pdf()
+
+    def _generate_pdf(html: str):
+        return HTML(string=html).write_pdf()
+
+    pdf_bytes = await run_in_threadpool(_generate_pdf, html_content)
     return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=report_{report_id}.pdf"})
