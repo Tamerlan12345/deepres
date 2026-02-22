@@ -208,11 +208,18 @@ from weasyprint import HTML
 from starlette.concurrency import run_in_threadpool
 
 @router.get("/reports/{report_id}/pdf")
-async def export_pdf(report_id: int, db: AsyncSession = Depends(get_db)):
-    # Здесь можно добавить проверку токена через query param, если нужно
+async def export_pdf(
+    report_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     result = await db.get(Report, report_id)
     if not result or not result.result_json:
         raise HTTPException(status_code=404, detail="Report or data not found")
+
+    # Access control
+    if current_user.admin != "yes" and result.id_users is not None and result.id_users != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to export this report")
 
     # ... (код генерации PDF без изменений) ...
     data = result.result_json
