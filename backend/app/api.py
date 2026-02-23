@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 import logging
 from jose import JWTError, jwt
+import html
 
 # Настройка логгера
 logger = logging.getLogger("uvicorn")
@@ -241,15 +242,15 @@ async def export_pdf(
     <body>
         <div style="text-align: right; color: #666;">CONFIDENTIAL - CENTRAS INSURANCE</div>
         <h1>Strategic AI Analysis Report</h1>
-        <p><strong>Query:</strong> {result.query}</p>
+        <p><strong>Query:</strong> {html.escape(result.query)}</p>
         <p><strong>Date:</strong> {result.created_at.strftime("%Y-%m-%d %H:%M")}</p>
 
         <div class="summary">
             <h3>Executive Summary</h3>
-            <p>{data.get('summary', 'No summary available.')}</p>
+            <p>{html.escape(data.get('summary', 'No summary available.'))}</p>
         </div>
 
-        <div style="white-space: pre-wrap;">{data.get('detailed_analysis', '')}</div>
+        <div style="white-space: pre-wrap;">{html.escape(data.get('detailed_analysis', ''))}</div>
     </body>
     </html>
     """
