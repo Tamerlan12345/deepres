@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # Use SQLite for local development in this environment since Postgres is not available
     DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
     RESET_DB: bool = False
+    DB_ECHO: bool = False
 
     # Security
     SECRET_KEY: str = Field(default_factory=get_default_secret_key)
