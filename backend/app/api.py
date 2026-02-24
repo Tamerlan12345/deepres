@@ -201,7 +201,7 @@ async def list_reports(
 
     except Exception as e:
         logger.error(f"Error listing reports: {e}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 # PDF экспорт (оставил как есть, добавил только получение пользователя для совместимости, но без строгой проверки пока)
 from fastapi.responses import Response
