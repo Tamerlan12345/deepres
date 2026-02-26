@@ -8,6 +8,8 @@ from sqlalchemy import select
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
+import secrets
+import string
 
 app = FastAPI(title="Deep Research Agent API")
 
@@ -34,11 +36,21 @@ async def startup_event():
 
         if not admin_user:
             print("Creating default admin user...")
-            hashed_pw = get_password_hash("admin")
+
+            admin_password = os.environ.get("ADMIN_PASSWORD")
+            if not admin_password:
+                alphabet = string.ascii_letters + string.digits
+                admin_password = ''.join(secrets.choice(alphabet) for i in range(16))
+                print(f"WARNING: Generated random admin password: {admin_password}")
+                print("Please change it immediately or set ADMIN_PASSWORD environment variable.")
+            else:
+                print("Using provided ADMIN_PASSWORD.")
+
+            hashed_pw = get_password_hash(admin_password)
             new_admin = User(username="admin", hashed_password=hashed_pw, admin="yes")
             session.add(new_admin)
             await session.commit()
-            print("Admin user created (login: admin / password: admin).")
+            print(f"Admin user created (login: admin).")
         else:
             # Убедимся, что у существующего админа права yes (если бд была мигрирована)
             if admin_user.admin != "yes":
