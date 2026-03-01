@@ -202,7 +202,8 @@ const Dashboard = ({ currentReportId, onNewReport }) => {
   }, [navigate]);
 
   useEffect(() => {
-    mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+    // 🛡️ Sentinel: Enforce strict security to prevent XSS in Mermaid diagrams
+    mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict' });
   }, []);
 
   // Poll for report status
