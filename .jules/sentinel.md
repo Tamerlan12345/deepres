@@ -17,3 +17,13 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-03-06 - Path Traversal via startswith
+**Vulnerability:** Path traversal check in `/api/{full_path:path}` used `startswith`, which fails to prevent access to sibling directories matching the prefix (e.g. `frontend/dist_secrets`).
+**Learning:** `os.path.normpath` + `startswith` is insufficient for ensuring paths remain inside a base directory, because `startswith('/foo/bar')` matches `/foo/bar_secrets/file.txt`.
+**Prevention:** Use `os.path.commonpath([base_path, target_path]) == base_path` instead of `startswith` to guarantee strict boundary checking.
+
+## 2026-03-06 - Missing Input Length Validation
+**Vulnerability:** Pydantic models `UserLogin` and `ReportCreate` did not limit string field lengths (`username`, `password`, `query`), creating a vector for resource exhaustion / DoS attacks.
+**Learning:** Unbounded strings can cause high memory usage, heavy payload processing overhead, and CPU exhaustion (e.g., long passwords crashing the `bcrypt` hashing function).
+**Prevention:** Always explicitly set `Field(..., max_length=N)` for all incoming API request data models to enforce boundaries early.
