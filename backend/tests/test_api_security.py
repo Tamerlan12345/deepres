@@ -127,5 +127,28 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
             )
             self.assertEqual(response.status_code, 200)
 
+    def test_dos_prevention_long_username(self):
+        # Test that extremely long usernames are rejected (422) instead of processed
+        long_username = "a" * 1000  # 1000 chars is > max_length=50
+        response = self.client.post("/api/login", json={"username": long_username, "password": "password"})
+        self.assertEqual(response.status_code, 422)
+
+    def test_dos_prevention_long_password(self):
+        # Test that extremely long passwords are rejected (422) instead of hashed
+        long_password = "a" * 1000  # 1000 chars is > max_length=128
+        response = self.client.post("/api/login", json={"username": "victim", "password": long_password})
+        self.assertEqual(response.status_code, 422)
+
+    def test_dos_prevention_long_report_query(self):
+        # Test that extremely long queries are rejected
+        token = self.get_token("victim", "password")
+        long_query = "a" * 2000  # > max_length=1000
+        response = self.client.post(
+            "/api/reports",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"query": long_query}
+        )
+        self.assertEqual(response.status_code, 422)
+
 if __name__ == "__main__":
     unittest.main()
