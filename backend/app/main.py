@@ -79,11 +79,12 @@ if os.path.exists(frontend_dist):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
     # 2. Catch-all route (must be last)
+    normalized_frontend_dist = os.path.normpath(frontend_dist)
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         # Protected file serving (prevent path traversal)
         safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
+        if os.path.commonpath([normalized_frontend_dist, safe_path]) != normalized_frontend_dist:
             return FileResponse(os.path.join(frontend_dist, "index.html"))
 
         if os.path.exists(safe_path) and os.path.isfile(safe_path):
