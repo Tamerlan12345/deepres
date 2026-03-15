@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-03-15 - Path Traversal in Catch-all SPA Route
+**Vulnerability:** The catch-all route `/{full_path:path}` in the FastAPI backend used `.startswith()` to validate if requested file paths were inside the frontend build directory. This is insecure and can be bypassed to access arbitrary files on the system if directories with similar prefixes exist (e.g. `/app/frontend/dist-evil`).
+**Learning:** String prefix checks are insufficient for validating file boundaries, and synchronous OS calls (`os.path.exists`, `os.path.isfile`) in async route handlers can block the ASGI event loop and degrade performance under load.
+**Prevention:** Always use `os.path.commonpath([base_dir, target_dir]) == base_dir` (with `os.path.abspath`) to guarantee boundary integrity. Offload all synchronous I/O operations (like checking file existence) to a thread pool using `starlette.concurrency.run_in_threadpool`.
