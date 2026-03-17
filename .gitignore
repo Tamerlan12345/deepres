@@ -6,3 +6,4 @@ frontend/dist/
 verification/
 *.log
 *.db
+venv/
