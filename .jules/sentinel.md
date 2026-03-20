@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-24 - Path Traversal via Improper Prefix Checking
+**Vulnerability:** The static file server used `startswith` instead of a secure path boundary check. A path like `../dist_secrets/file` evaluates to `/app/frontend/dist_secrets/file`, which erroneously passes `startswith("/app/frontend/dist")`, exposing arbitrary files that share the same directory prefix.
+**Learning:** `startswith` only checks string prefixes, not hierarchical directory boundaries. Using it for path validation creates a critical path traversal vulnerability allowing attackers to read internal files.
+**Prevention:** File path boundary validation must always use `os.path.commonpath` on absolute paths (e.g., converted via `os.path.abspath`) rather than string prefix checks to securely prevent path traversal.
