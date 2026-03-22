@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-24 - XSS via Mermaid Diagram Rendering
+**Vulnerability:** The application rendered Mermaid diagrams using React's `dangerouslySetInnerHTML` with `mermaid.initialize({ securityLevel: 'loose' })`, allowing for XSS if a user provided malicious input in a diagram definition.
+**Learning:** Even well-known libraries like Mermaid can introduce vulnerabilities if their security configurations are misconfigured or misunderstood (like setting `securityLevel: 'loose'`).
+**Prevention:** Always verify the security configuration of third-party libraries that handle user input or rendering. Use strict security modes by default.
