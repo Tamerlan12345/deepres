@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2024-05-24 - Path Traversal in File Serving Route
+**Vulnerability:** The SPA static file serving route used `startswith` to check if a requested path was within the intended directory. This allows prefix-based path traversal (e.g., if target is `/app/dist`, an attacker could access `/app/dist_secrets/secret.txt` via `/../dist_secrets/secret.txt` because both start with `/app/dist`).
+**Learning:** Checking directory bounds using string prefix checks (`startswith`) on normalized paths is insecure, especially when the path segment is user-controlled.
+**Prevention:** Always use `os.path.commonpath([base_path, target_path]) == base_path` where `base_path` and `target_path` are both absolute paths. This strictly ensures the target path is a direct descendant of the base path.
