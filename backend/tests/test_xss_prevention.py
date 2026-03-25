@@ -1,5 +1,6 @@
-
 import unittest
+import string
+import random
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -12,8 +13,8 @@ from app.auth import get_password_hash
 from datetime import datetime, timezone
 import html
 
-# Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+# Use a distinct in-memory DB URL for each test file to avoid table clobbering in parallel/sequential runs
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={''.join(random.choices(string.ascii_letters, k=10))}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -85,22 +86,14 @@ class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
 
             self.assertEqual(response.status_code, 200)
 
-            # Get the HTML string passed to HTML constructor
-            # The HTML class is initialized with string=...
             call_args = mock_html.call_args
-            # call_args.kwargs['string'] or call_args[1]['string']
             if 'string' in call_args.kwargs:
                 html_content = call_args.kwargs['string']
             else:
-                # Fallback if positional (though code uses keyword)
                 html_content = call_args[0][0] if call_args[0] else ""
 
-            # Check that malicious content is ESCAPED
-            # We expect &lt;script&gt; instead of <script>
             self.assertNotIn("<script>", html_content, "Raw <script> tag found in PDF HTML!")
             self.assertIn("&lt;script&gt;", html_content, "Escaped <script> tag not found!")
-
-            # Check other fields
             self.assertIn("&amp;", html_content, "Ampersand not escaped!")
             self.assertIn("&quot;", html_content, "Quote not escaped!")
 

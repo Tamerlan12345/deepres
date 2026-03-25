@@ -1,5 +1,6 @@
-
 import unittest
+import string
+import random
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -11,8 +12,8 @@ from app.models import User, Report, ReportStatus
 from app.auth import get_password_hash
 from datetime import datetime, timezone
 
-# Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+# Use a unique DB for each file
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={''.join(random.choices(string.ascii_letters, k=10))}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -36,31 +37,16 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
 
         # Create users
         async with TestingSessionLocal() as db:
-            # Victim user
             victim_user = User(username="victim", hashed_password=get_password_hash("password"), admin="no")
             db.add(victim_user)
 
-            # Attacker user
             attacker_user = User(username="attacker", hashed_password=get_password_hash("password"), admin="no")
             db.add(attacker_user)
 
-            # Admin user
             admin_user = User(username="admin_user", hashed_password=get_password_hash("password"), admin="yes")
             db.add(admin_user)
 
             await db.commit()
-
-            # Need to re-query to get IDs
-            result = await db.execute(
-                # select(User).where(User.username == "victim")
-                # but we can just use refresh if the session is still open?
-                # AsyncSession behaves a bit differently. Let's just assume IDs are 1, 2, 3 or fetch them.
-                # Or simpler:
-                User.__table__.select().where(User.username == "victim")
-            )
-            # Actually, `refresh` should work if we didn't close session.
-            # But let's keep it simple and just query by username if needed.
-            # Or trust that `victim_user.id` is populated after commit/refresh.
             await db.refresh(victim_user)
             self.victim_id = victim_user.id
 
@@ -81,21 +67,18 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
             await conn.run_sync(Base.metadata.drop_all)
 
     def get_token(self, username, password):
-        # The login endpoint expects JSON body because it uses Pydantic model UserLogin
         response = self.client.post("/api/login", json={"username": username, "password": password})
         if response.status_code != 200:
             raise Exception(f"Login failed: {response.text}")
         return response.json()["access_token"]
 
     def test_export_pdf_unauthenticated(self):
-        # Without auth, it should fail (currently passes/200, so this test will fail until fixed)
         with patch("app.api.HTML") as mock_html:
             mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
             response = self.client.get(f"/api/reports/{self.report_id}/pdf")
             self.assertEqual(response.status_code, 401)
 
     def test_export_pdf_unauthorized(self):
-        # Attacker tries to access victim's report
         token = self.get_token("attacker", "password")
         with patch("app.api.HTML") as mock_html:
             mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
@@ -106,7 +89,6 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response.status_code, 403)
 
     def test_export_pdf_authorized_owner(self):
-        # Victim accesses their own report
         token = self.get_token("victim", "password")
         with patch("app.api.HTML") as mock_html:
             mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
@@ -117,7 +99,6 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response.status_code, 200)
 
     def test_export_pdf_authorized_admin(self):
-        # Admin accesses any report
         token = self.get_token("admin_user", "password")
         with patch("app.api.HTML") as mock_html:
             mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
