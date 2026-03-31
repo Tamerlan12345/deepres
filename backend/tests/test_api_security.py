@@ -1,5 +1,6 @@
-
 import unittest
+import uuid
+import asyncio
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -11,31 +12,29 @@ from app.models import User, Report, ReportStatus
 from app.auth import get_password_hash
 from datetime import datetime, timezone
 
-# Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-engine = create_async_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
-
-async def override_get_db():
-    async with TestingSessionLocal() as session:
-        yield session
-
-app.dependency_overrides[get_db] = override_get_db
-
 class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        async with engine.begin() as conn:
+        self.db_url = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
+        self.engine = create_async_engine(
+            self.db_url,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+        self.TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine, class_=AsyncSession)
+
+        async def override_get_db():
+            async with self.TestingSessionLocal() as session:
+                yield session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
         self.client = TestClient(app)
 
         # Create users
-        async with TestingSessionLocal() as db:
+        async with self.TestingSessionLocal() as db:
             # Victim user
             victim_user = User(username="victim", hashed_password=get_password_hash("password"), admin="no")
             db.add(victim_user)
@@ -50,17 +49,6 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
 
             await db.commit()
 
-            # Need to re-query to get IDs
-            result = await db.execute(
-                # select(User).where(User.username == "victim")
-                # but we can just use refresh if the session is still open?
-                # AsyncSession behaves a bit differently. Let's just assume IDs are 1, 2, 3 or fetch them.
-                # Or simpler:
-                User.__table__.select().where(User.username == "victim")
-            )
-            # Actually, `refresh` should work if we didn't close session.
-            # But let's keep it simple and just query by username if needed.
-            # Or trust that `victim_user.id` is populated after commit/refresh.
             await db.refresh(victim_user)
             self.victim_id = victim_user.id
 
@@ -77,8 +65,10 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
             self.report_id = report.id
 
     async def asyncTearDown(self):
-        async with engine.begin() as conn:
+        async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
+        app.dependency_overrides.clear()
+        await self.engine.dispose()
 
     def get_token(self, username, password):
         # The login endpoint expects JSON body because it uses Pydantic model UserLogin

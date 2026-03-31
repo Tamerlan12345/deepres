@@ -7,6 +7,7 @@ from app.auth import get_password_hash
 from sqlalchemy import select
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+import starlette.concurrency
 import os
 import secrets
 import string
@@ -82,14 +83,22 @@ if os.path.exists(frontend_dist):
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         # Protected file serving (prevent path traversal)
-        safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
-            return FileResponse(os.path.join(frontend_dist, "index.html"))
+        abs_frontend_dist = os.path.abspath(frontend_dist)
+        safe_path = os.path.abspath(os.path.join(abs_frontend_dist, full_path))
 
-        if os.path.exists(safe_path) and os.path.isfile(safe_path):
+        try:
+            if os.path.commonpath([abs_frontend_dist, safe_path]) != abs_frontend_dist:
+                return FileResponse(os.path.join(abs_frontend_dist, "index.html"))
+        except ValueError:
+            # commonpath raises ValueError if paths are on different drives
+            return FileResponse(os.path.join(abs_frontend_dist, "index.html"))
+
+        is_file = await starlette.concurrency.run_in_threadpool(os.path.isfile, safe_path)
+        is_exists = await starlette.concurrency.run_in_threadpool(os.path.exists, safe_path)
+        if is_exists and is_file:
             return FileResponse(safe_path)
 
-        return FileResponse(os.path.join(frontend_dist, "index.html"))
+        return FileResponse(os.path.join(abs_frontend_dist, "index.html"))
 
 if __name__ == "__main__":
     import uvicorn
