@@ -1,5 +1,6 @@
-
 import unittest
+import uuid
+import asyncio
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -12,31 +13,29 @@ from app.auth import get_password_hash
 from datetime import datetime, timezone
 import html
 
-# Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-engine = create_async_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
-
-async def override_get_db():
-    async with TestingSessionLocal() as session:
-        yield session
-
-app.dependency_overrides[get_db] = override_get_db
-
 class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        async with engine.begin() as conn:
+        self.db_url = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
+        self.engine = create_async_engine(
+            self.db_url,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+        self.TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine, class_=AsyncSession)
+
+        async def override_get_db():
+            async with self.TestingSessionLocal() as session:
+                yield session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
         self.client = TestClient(app)
 
         # Create user
-        async with TestingSessionLocal() as db:
+        async with self.TestingSessionLocal() as db:
             user = User(username="testuser", hashed_password=get_password_hash("password"), admin="no")
             db.add(user)
             await db.commit()
@@ -64,8 +63,10 @@ class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
             self.report_id = report.id
 
     async def asyncTearDown(self):
-        async with engine.begin() as conn:
+        async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
+        app.dependency_overrides.clear()
+        await self.engine.dispose()
 
     def get_token(self, username, password):
         response = self.client.post("/api/login", json={"username": username, "password": password})
