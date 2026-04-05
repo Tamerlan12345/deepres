@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2024-05-18 - Prevent Partial Path Traversal in Catch-All Routes
+**Vulnerability:** The SPA catch-all route `/{full_path:path}` used `.startswith()` for path validation. This allows "partial path traversal", meaning an attacker could request a path like `/app/frontend/dist_secrets/key.txt` which starts with `/app/frontend/dist`, successfully bypassing the check but reading outside the intended directory. Furthermore, synchronous file checks (`os.path.exists`, `os.path.isfile`) were blocking the async event loop.
+**Learning:** Checking path boundaries using `.startswith()` on strings is unsafe. True path boundaries must be validated by checking common prefixes of the resolved absolute paths. In addition, synchronous I/O operations in async endpoints can cause blocking issues under load.
+**Prevention:** Always use `os.path.abspath` and `os.path.commonpath` to validate path constraints. In async functions, use `starlette.concurrency.run_in_threadpool` (or similar) to execute synchronous operations without blocking the event loop. Catch `ValueError` in `commonpath` to handle cases where paths are on different drives.
