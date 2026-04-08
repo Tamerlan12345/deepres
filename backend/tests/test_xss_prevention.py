@@ -11,9 +11,10 @@ from app.models import User, Report, ReportStatus
 from app.auth import get_password_hash
 from datetime import datetime, timezone
 import html
+import uuid
 
 # Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
