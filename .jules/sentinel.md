@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2025-04-14 - Fix Path Traversal in Catch-All SPA Route
+**Vulnerability:** The FastAPI application used a string `startswith` check to ensure the requested static file resolved within the `frontend/dist` directory. This is insecure as an attacker can traverse up the directory structure and access sibling directories that share the same prefix (e.g. `frontend/dist_secrets`).
+**Learning:** Never use string manipulation for validating directory boundaries. Test environments implicitly normalize paths using `TestClient` and `httpx`, which can mask traversal vulnerabilities unless tests are correctly designed to directly invoke the inner endpoint function.
+**Prevention:** Always use `os.path.commonpath([base_path, safe_path]) == base_path` against absolute paths, wrap it in a `try...except ValueError` to handle drive letter mismatches, and mock/bypass standard test clients to accurately verify traversal payloads.
