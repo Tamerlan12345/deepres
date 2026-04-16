@@ -17,3 +17,7 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+## 2024-05-24 - Path Traversal bypass using string prefix matching
+**Vulnerability:** The SPA catch-all route `serve_spa` in FastAPI checked for path traversals by resolving the absolute path and doing a string-based prefix check: `if not safe_path.startswith(frontend_dist)`. A path such as `frontend/dist-secrets/secret.txt` perfectly matched `frontend/dist` as a string prefix, thus bypassing the validation check and allowing path traversal to siblings of the allowed directory.
+**Learning:** String-based prefix matching (like `.startswith()`) should never be used to evaluate path boundaries, because directory structures rely on slashes and segment boundaries, not strict character prefixes.
+**Prevention:** Always use structural path comparison tools. In Python, `os.path.commonpath([allowed_base, target_path]) == allowed_base` is the standard safe way to check if `target_path` is strictly within `allowed_base`. This correctly accounts for directory boundaries. Handle `ValueError` correctly because differing drive letters can throw an error.
