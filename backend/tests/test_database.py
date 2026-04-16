@@ -1,3 +1,4 @@
+import uuid
 import unittest
 import os
 import sys
