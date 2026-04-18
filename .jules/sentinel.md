@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2024-04-18 - [CRITICAL] Prevent Path Traversal in Catch-all Route
+**Vulnerability:** The static file serving logic in FastAPI used a simple `startswith` check to validate if the requested file was within the `frontend/dist` directory. This allowed directory traversal and prefix evasion.
+**Learning:** Checking path validity via string prefixes like `startswith` is fundamentally insecure. An attacker can request a file via `../dist_secret/secret.txt` that matches the prefix, thereby bypassing the check and accessing files outside the intended root directory.
+**Prevention:** Always use secure path resolution. Converting paths to their absolute form (e.g. `os.path.abspath`) and utilizing path boundary functions such as `os.path.commonpath([path1, path2]) == base_path` ensures the request is strictly constrained to the intended directory.
