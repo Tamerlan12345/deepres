@@ -12,8 +12,9 @@ from app.auth import get_password_hash
 from datetime import datetime, timezone
 import html
 
+import uuid
 # Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -33,7 +34,13 @@ class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        self.client = TestClient(app)
+
+        # Override BEFORE creating TestClient to avoid startup event using old engine
+        app.dependency_overrides[get_db] = override_get_db
+
+        # Mock main engine as well so lifespan events use in-memory db
+        with patch('app.main.engine', engine), patch('app.main.AsyncSessionLocal', TestingSessionLocal):
+            self.client = TestClient(app)
 
         # Create user
         async with TestingSessionLocal() as db:
