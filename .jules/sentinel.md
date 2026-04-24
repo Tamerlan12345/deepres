@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2025-04-24 - [Path Traversal] Insecure Path Boundary Check using startswith
+**Vulnerability:** The SPA catch-all route handler (`serve_spa`) used `safe_path.startswith(frontend_dist)` to validate that the requested file resides within the intended `frontend/dist` directory. This approach is vulnerable because it performs a string prefix match without enforcing a directory boundary (i.e. a trailing slash). As a result, an attacker could request a path like `../dist-secrets/secret.txt`, which resolves to `/app/frontend/dist-secrets/secret.txt`. Since this path string starts with `/app/frontend/dist`, the validation check incorrectly passes, allowing unauthorized access to files outside the intended directory.
+**Learning:** Using `startswith()` for path validation is dangerous if trailing slashes are not enforced, because it allows partial matches on directory names.
+**Prevention:** Always use `os.path.commonpath` with absolute paths to verify that a resolved path is strictly contained within the intended base directory. Additionally, wrap the check in a `try-except ValueError` block to handle edge cases where paths reside on different drives (e.g. on Windows), falling back to a safe default.
