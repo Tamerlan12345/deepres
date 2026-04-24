@@ -83,7 +83,16 @@ if os.path.exists(frontend_dist):
     async def serve_spa(full_path: str):
         # Protected file serving (prevent path traversal)
         safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
+
+        try:
+            # Prevent path traversal by ensuring the resolved path is within frontend_dist.
+            # Using os.path.commonpath prevents bypasses where a directory like "dist-secrets"
+            # would pass a string startswith("dist") check.
+            is_in_dist = os.path.commonpath([os.path.abspath(safe_path), os.path.abspath(frontend_dist)]) == os.path.abspath(frontend_dist)
+            if not is_in_dist:
+                return FileResponse(os.path.join(frontend_dist, "index.html"))
+        except ValueError:
+            # Paths are on different drives
             return FileResponse(os.path.join(frontend_dist, "index.html"))
 
         if os.path.exists(safe_path) and os.path.isfile(safe_path):
