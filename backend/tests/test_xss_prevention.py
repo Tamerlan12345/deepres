@@ -5,7 +5,13 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from app.main import app
+import sys
+from unittest.mock import patch
+
+# Mock the database engine BEFORE importing app
+with patch('app.database.engine'), patch('app.database.AsyncSessionLocal'):
+    from app.main import app
+
 from app.database import Base, get_db
 from app.models import User, Report, ReportStatus
 from app.auth import get_password_hash
@@ -13,7 +19,8 @@ from datetime import datetime, timezone
 import html
 
 # Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+import uuid
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
