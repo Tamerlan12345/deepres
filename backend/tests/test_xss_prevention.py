@@ -1,19 +1,17 @@
-
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from app.main import app
 from app.database import Base, get_db
 from app.models import User, Report, ReportStatus
 from app.auth import get_password_hash
 from datetime import datetime, timezone
+import uuid
 import html
 
-# Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -26,14 +24,17 @@ async def override_get_db():
     async with TestingSessionLocal() as session:
         yield session
 
-app.dependency_overrides[get_db] = override_get_db
-
 class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
+        import app.main
+        self.app = app.main.app
+        self.app.dependency_overrides[get_db] = override_get_db
+
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        self.client = TestClient(app)
+        with patch('app.main.engine', engine), patch('app.main.AsyncSessionLocal', TestingSessionLocal):
+            self.client = TestClient(self.app)
 
         # Create user
         async with TestingSessionLocal() as db:
@@ -66,6 +67,7 @@ class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
+        self.app.dependency_overrides.clear()
 
     def get_token(self, username, password):
         response = self.client.post("/api/login", json={"username": username, "password": password})
@@ -85,24 +87,14 @@ class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
 
             self.assertEqual(response.status_code, 200)
 
-            # Get the HTML string passed to HTML constructor
-            # The HTML class is initialized with string=...
             call_args = mock_html.call_args
-            # call_args.kwargs['string'] or call_args[1]['string']
             if 'string' in call_args.kwargs:
                 html_content = call_args.kwargs['string']
             else:
-                # Fallback if positional (though code uses keyword)
                 html_content = call_args[0][0] if call_args[0] else ""
 
-            # Check that malicious content is ESCAPED
-            # We expect &lt;script&gt; instead of <script>
             self.assertNotIn("<script>", html_content, "Raw <script> tag found in PDF HTML!")
             self.assertIn("&lt;script&gt;", html_content, "Escaped <script> tag not found!")
 
-            # Check other fields
             self.assertIn("&amp;", html_content, "Ampersand not escaped!")
             self.assertIn("&quot;", html_content, "Quote not escaped!")
-
-if __name__ == "__main__":
-    unittest.main()
