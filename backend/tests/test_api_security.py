@@ -1,18 +1,16 @@
-
 import unittest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from app.main import app
 from app.database import Base, get_db
 from app.models import User, Report, ReportStatus
 from app.auth import get_password_hash
 from datetime import datetime, timezone
+import uuid
 
-# Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -25,50 +23,41 @@ async def override_get_db():
     async with TestingSessionLocal() as session:
         yield session
 
-app.dependency_overrides[get_db] = override_get_db
-
 class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
+        # Override app db dependency
+        import app.main
+        self.app = app.main.app
+        self.app.dependency_overrides[get_db] = override_get_db
+
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        self.client = TestClient(app)
+        # Mock app.main's engine directly for startup events
+        with patch('app.main.engine', engine), patch('app.main.AsyncSessionLocal', TestingSessionLocal):
+            self.client = TestClient(self.app)
 
         # Create users
         async with TestingSessionLocal() as db:
-            # Victim user
-            victim_user = User(username="victim", hashed_password=get_password_hash("password"), admin="no")
-            db.add(victim_user)
-
-            # Attacker user
-            attacker_user = User(username="attacker", hashed_password=get_password_hash("password"), admin="no")
-            db.add(attacker_user)
-
-            # Admin user
-            admin_user = User(username="admin_user", hashed_password=get_password_hash("password"), admin="yes")
-            db.add(admin_user)
-
+            owner = User(username="owner", hashed_password=get_password_hash("password"), admin="no")
+            other = User(username="other", hashed_password=get_password_hash("password"), admin="no")
+            admin = User(username="admin_user", hashed_password=get_password_hash("password"), admin="yes")
+            db.add_all([owner, other, admin])
             await db.commit()
+            await db.refresh(owner)
+            await db.refresh(other)
+            await db.refresh(admin)
 
-            # Need to re-query to get IDs
-            result = await db.execute(
-                # select(User).where(User.username == "victim")
-                # but we can just use refresh if the session is still open?
-                # AsyncSession behaves a bit differently. Let's just assume IDs are 1, 2, 3 or fetch them.
-                # Or simpler:
-                User.__table__.select().where(User.username == "victim")
-            )
-            # Actually, `refresh` should work if we didn't close session.
-            # But let's keep it simple and just query by username if needed.
-            # Or trust that `victim_user.id` is populated after commit/refresh.
-            await db.refresh(victim_user)
-            self.victim_id = victim_user.id
+            self.owner_id = owner.id
+            self.other_id = other.id
+            self.admin_id = admin.id
 
+            # Create report
             report = Report(
-                query="test query",
+                query="Test Query",
                 status=ReportStatus.COMPLETED,
-                id_users=self.victim_id,
-                result_json={"summary": "Secret Summary", "detailed_analysis": "Secret Analysis"},
+                id_users=self.owner_id,
+                result_json={"summary": "test", "detailed_analysis": "test"},
                 created_at=datetime.now(timezone.utc)
             )
             db.add(report)
@@ -79,53 +68,40 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
+        self.app.dependency_overrides.clear()
 
     def get_token(self, username, password):
-        # The login endpoint expects JSON body because it uses Pydantic model UserLogin
         response = self.client.post("/api/login", json={"username": username, "password": password})
-        if response.status_code != 200:
-            raise Exception(f"Login failed: {response.text}")
         return response.json()["access_token"]
 
     def test_export_pdf_unauthenticated(self):
-        # Without auth, it should fail (currently passes/200, so this test will fail until fixed)
-        with patch("app.api.HTML") as mock_html:
-            mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
-            response = self.client.get(f"/api/reports/{self.report_id}/pdf")
-            self.assertEqual(response.status_code, 401)
+        response = self.client.get(f"/api/reports/{self.report_id}/pdf")
+        self.assertEqual(response.status_code, 401)
+
+    @patch("app.api.HTML")
+    def test_export_pdf_authorized_owner(self, mock_html):
+        mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
+        token = self.get_token("owner", "password")
+        response = self.client.get(
+            f"/api/reports/{self.report_id}/pdf",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        self.assertEqual(response.status_code, 200)
+
+    @patch("app.api.HTML")
+    def test_export_pdf_authorized_admin(self, mock_html):
+        mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
+        token = self.get_token("admin_user", "password")
+        response = self.client.get(
+            f"/api/reports/{self.report_id}/pdf",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        self.assertEqual(response.status_code, 200)
 
     def test_export_pdf_unauthorized(self):
-        # Attacker tries to access victim's report
-        token = self.get_token("attacker", "password")
-        with patch("app.api.HTML") as mock_html:
-            mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
-            response = self.client.get(
-                f"/api/reports/{self.report_id}/pdf",
-                headers={"Authorization": f"Bearer {token}"}
-            )
-            self.assertEqual(response.status_code, 403)
-
-    def test_export_pdf_authorized_owner(self):
-        # Victim accesses their own report
-        token = self.get_token("victim", "password")
-        with patch("app.api.HTML") as mock_html:
-            mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
-            response = self.client.get(
-                f"/api/reports/{self.report_id}/pdf",
-                headers={"Authorization": f"Bearer {token}"}
-            )
-            self.assertEqual(response.status_code, 200)
-
-    def test_export_pdf_authorized_admin(self):
-        # Admin accesses any report
-        token = self.get_token("admin_user", "password")
-        with patch("app.api.HTML") as mock_html:
-            mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
-            response = self.client.get(
-                f"/api/reports/{self.report_id}/pdf",
-                headers={"Authorization": f"Bearer {token}"}
-            )
-            self.assertEqual(response.status_code, 200)
-
-if __name__ == "__main__":
-    unittest.main()
+        token = self.get_token("other", "password")
+        response = self.client.get(
+            f"/api/reports/{self.report_id}/pdf",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        self.assertEqual(response.status_code, 403)
