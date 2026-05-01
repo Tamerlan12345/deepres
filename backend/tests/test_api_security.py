@@ -10,9 +10,10 @@ from app.database import Base, get_db
 from app.models import User, Report, ReportStatus
 from app.auth import get_password_hash
 from datetime import datetime, timezone
+import uuid
 
 # Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -21,18 +22,24 @@ engine = create_async_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
+# Mock app.main engine to avoid OperationalError due to conflicting loop contexts
+import app.main
+app.main.engine = engine
+app.main.AsyncSessionLocal = TestingSessionLocal
+
 async def override_get_db():
     async with TestingSessionLocal() as session:
         yield session
 
-app.dependency_overrides[get_db] = override_get_db
+from app.main import app as main_app
+main_app.dependency_overrides[get_db] = override_get_db
 
 class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        self.client = TestClient(app)
+        self.client = TestClient(main_app)
 
         # Create users
         async with TestingSessionLocal() as db:
