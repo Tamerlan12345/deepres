@@ -78,18 +78,31 @@ if os.path.exists(frontend_dist):
     if os.path.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
+    from starlette.concurrency import run_in_threadpool
+
     # 2. Catch-all route (must be last)
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         # Protected file serving (prevent path traversal)
-        safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
-            return FileResponse(os.path.join(frontend_dist, "index.html"))
+        # Using os.path.abspath and os.path.commonpath prevents traversal
+        # bypasses like using a directory with the same prefix (e.g. frontend/dist_secret)
+        base_dir = os.path.abspath(frontend_dist)
+        safe_path = os.path.abspath(os.path.join(base_dir, full_path))
 
-        if os.path.exists(safe_path) and os.path.isfile(safe_path):
+        try:
+            if os.path.commonpath([base_dir, safe_path]) != base_dir:
+                return FileResponse(os.path.join(base_dir, "index.html"))
+        except ValueError:
+            # Handles cases where paths are on different drives
+            return FileResponse(os.path.join(base_dir, "index.html"))
+
+        # Use run_in_threadpool for synchronous file system operations to prevent blocking the event loop
+        is_file = await run_in_threadpool(os.path.isfile, safe_path)
+
+        if is_file:
             return FileResponse(safe_path)
 
-        return FileResponse(os.path.join(frontend_dist, "index.html"))
+        return FileResponse(os.path.join(base_dir, "index.html"))
 
 if __name__ == "__main__":
     import uvicorn
