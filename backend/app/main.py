@@ -81,12 +81,19 @@ if os.path.exists(frontend_dist):
     # 2. Catch-all route (must be last)
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
+        from starlette.concurrency import run_in_threadpool
         # Protected file serving (prevent path traversal)
-        safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
+        safe_path = os.path.abspath(os.path.normpath(os.path.join(frontend_dist, full_path)))
+        abs_frontend_dist = os.path.abspath(frontend_dist)
+
+        try:
+            if os.path.commonpath([abs_frontend_dist, safe_path]) != abs_frontend_dist:
+                return FileResponse(os.path.join(frontend_dist, "index.html"))
+        except ValueError:
             return FileResponse(os.path.join(frontend_dist, "index.html"))
 
-        if os.path.exists(safe_path) and os.path.isfile(safe_path):
+        is_file = await run_in_threadpool(lambda: os.path.exists(safe_path) and os.path.isfile(safe_path))
+        if is_file:
             return FileResponse(safe_path)
 
         return FileResponse(os.path.join(frontend_dist, "index.html"))
