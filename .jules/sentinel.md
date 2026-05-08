@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-25 - Path Traversal in Catch-all SPA Route
+**Vulnerability:** A path traversal vulnerability existed in the SPA static file serving route (`/{full_path:path}`). The backend used `startswith` to validate that paths were within the allowed directory. By using `../` segments, an attacker could request files outside the `frontend/dist` directory because `os.path.normpath` resolved the directory traversal without preventing the `startswith` condition if the prefix matched.
+**Learning:** `startswith` string matching is insufficient for path boundary validation. `os.path.normpath` removes `../` but string-based validation doesn't reliably check if the final resolved absolute path is actually within the target directory. Additionally, testing this via `TestClient` can mask the vulnerability due to automatic client-side path normalization.
+**Prevention:** Replaced `startswith` with `os.path.commonpath` on absolute paths to securely ensure that the requested path boundary remains strictly within the intended target directory. Bypassed `TestClient` path normalization during testing by extracting and executing the route endpoint directly.
