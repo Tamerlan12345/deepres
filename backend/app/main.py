@@ -82,14 +82,22 @@ if os.path.exists(frontend_dist):
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         # Protected file serving (prevent path traversal)
-        safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
-            return FileResponse(os.path.join(frontend_dist, "index.html"))
+        # Security: always resolve paths to absolute paths and use commonpath to verify boundaries
+        abs_frontend_dist = os.path.abspath(frontend_dist)
+        safe_path = os.path.abspath(os.path.join(abs_frontend_dist, full_path))
+
+        try:
+            # Check if safe_path is strictly within frontend_dist directory
+            if os.path.commonpath([abs_frontend_dist, safe_path]) != abs_frontend_dist:
+                return FileResponse(os.path.join(abs_frontend_dist, "index.html"))
+        except ValueError:
+            # If paths are on different drives (e.g., Windows), commonpath raises ValueError
+            return FileResponse(os.path.join(abs_frontend_dist, "index.html"))
 
         if os.path.exists(safe_path) and os.path.isfile(safe_path):
             return FileResponse(safe_path)
 
-        return FileResponse(os.path.join(frontend_dist, "index.html"))
+        return FileResponse(os.path.join(abs_frontend_dist, "index.html"))
 
 if __name__ == "__main__":
     import uvicorn
