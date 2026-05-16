@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-25 - Path Traversal Bypass via `startswith`
+**Vulnerability:** Path traversal vulnerability in the static file serving route (`/{full_path:path}`). The protection relied on `safe_path.startswith(frontend_dist)` after resolving the path. If `frontend_dist` is `/app/frontend/dist`, an attacker could request `../dist_secret.txt` which resolves to `/app/frontend/dist_secret.txt`. This path starts with `/app/frontend/dist` but is outside the intended directory.
+**Learning:** Checking string prefixes with `startswith` is insufficient for path boundary validation because it doesn't account for directory boundaries (the separator `/`).
+**Prevention:** Always use `os.path.commonpath([os.path.abspath(base), os.path.abspath(target)]) == os.path.abspath(base)` (and catch `ValueError` for cross-drive paths on Windows) to securely ensure a resolved path falls strictly within the intended base directory.
