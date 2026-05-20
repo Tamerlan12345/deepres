@@ -1,3 +1,4 @@
+import uuid
 
 import unittest
 from unittest.mock import patch, MagicMock
@@ -5,7 +6,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from app.main import app
 from app.database import Base, get_db
 from app.models import User, Report, ReportStatus
 from app.auth import get_password_hash
@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 import html
 
 # Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -21,6 +21,12 @@ engine = create_async_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
+
+import app.main
+app.main.engine = engine
+app.main.AsyncSessionLocal = TestingSessionLocal
+from app.main import app
+
 
 async def override_get_db():
     async with TestingSessionLocal() as session:

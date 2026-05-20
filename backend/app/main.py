@@ -7,6 +7,7 @@ from app.auth import get_password_hash
 from sqlalchemy import select
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.concurrency import run_in_threadpool
 import os
 import secrets
 import string
@@ -83,10 +84,20 @@ if os.path.exists(frontend_dist):
     async def serve_spa(full_path: str):
         # Protected file serving (prevent path traversal)
         safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
+
+        # Use os.path.commonpath for secure boundary validation
+        try:
+            is_safe = os.path.commonpath([os.path.abspath(frontend_dist), os.path.abspath(safe_path)]) == os.path.abspath(frontend_dist)
+        except ValueError:
+            is_safe = False
+
+        if not is_safe:
             return FileResponse(os.path.join(frontend_dist, "index.html"))
 
-        if os.path.exists(safe_path) and os.path.isfile(safe_path):
+        path_exists = await run_in_threadpool(os.path.exists, safe_path)
+        path_is_file = await run_in_threadpool(os.path.isfile, safe_path)
+
+        if path_exists and path_is_file:
             return FileResponse(safe_path)
 
         return FileResponse(os.path.join(frontend_dist, "index.html"))
