@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-24 - Information Leakage in Background Task
+**Vulnerability:** The Gemini background processing task logged raw exception details (`str(e)`) to the database in `result_json` and `logs`, which could be fetched by users and leak internal system information.
+**Learning:** Even asynchronous background tasks and logs returned to the client must use generic error messages. Detailed internal errors should only be written to standard server logs, not to database records exposed via APIs.
+**Prevention:** Avoid injecting raw `str(e)` or stack traces into client-facing logs or `result_json`. Always map internal exceptions to generic user-friendly messages for storage that users will see.
