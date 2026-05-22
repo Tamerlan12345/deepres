@@ -8,7 +8,7 @@ from app.gemini_service import process_report
 from app.auth import verify_password, create_access_token, get_password_hash
 from app.config import settings
 from datetime import timedelta
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 import logging
 from jose import JWTError, jwt
@@ -23,8 +23,10 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
 class UserLogin(BaseModel):
-    username: str
-    password: str
+    # SECURITY: Max length limits added to prevent memory exhaustion and DoS from huge inputs
+    username: str = Field(..., max_length=50)
+    # SECURITY: Prevent CPU exhaustion during bcrypt password hashing
+    password: str = Field(..., max_length=100)
 
 class Token(BaseModel):
     access_token: str
@@ -32,7 +34,8 @@ class Token(BaseModel):
     admin: str  # Возвращаем статус админа
 
 class ReportCreate(BaseModel):
-    query: str
+    # SECURITY: Limit query length to prevent excessive processing
+    query: str = Field(..., max_length=1000)
 
 class ReportResponse(BaseModel):
     id: int
