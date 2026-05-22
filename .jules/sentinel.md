@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-24 - Missing Input Length Limits
+**Vulnerability:** API endpoints lacked input length validation (e.g., `UserLogin` and `ReportCreate` Pydantic models had unbound string length limits). This presents a DoS risk where an attacker could send huge payloads causing memory exhaustion or excessive processing times (like password hashing huge strings).
+**Learning:** Frameworks like FastAPI and Pydantic don't automatically enforce maximum lengths on `str` fields. They must be explicitly defined using `Field(..., max_length=X)`.
+**Prevention:** Always use `Field(max_length=...)` on all string inputs in Pydantic models to restrict unbounded payload sizes and prevent resource exhaustion.
