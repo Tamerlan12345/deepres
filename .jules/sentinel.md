@@ -17,3 +17,13 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-24 - Async Event Loop Blocking via Synchronous File I/O
+**Vulnerability:** The catch-all SPA endpoint (`/{full_path:path}`) was using synchronous file system functions (`os.path.exists`, `os.path.isfile`) directly within an `async def` FastAPI route. This blocked the asyncio event loop for all requests.
+**Learning:** In asynchronous frameworks like FastAPI, any synchronous, blocking operation (like file I/O or CPU-bound tasks) can severely degrade performance and potentially cause DoS if attacked with slow operations.
+**Prevention:** Always wrap synchronous file system calls in a thread pool (e.g., `starlette.concurrency.run_in_threadpool`) or use an async file system library (like `aiofiles`) when operating inside an `async def` route.
+
+## 2026-02-24 - Insecure Path Boundary Validation
+**Vulnerability:** Path traversal protection in the catch-all route was incorrectly implemented using string prefix matching (`safe_path.startswith(frontend_dist)`). An attacker could bypass this by creating a sibling directory like `/app/frontend/dist_attack`.
+**Learning:** String comparisons are not safe for file path validation.
+**Prevention:** Use `os.path.commonpath([os.path.abspath(safe_path), os.path.abspath(base_dir)]) == os.path.abspath(base_dir)` to enforce strict path boundaries, and carefully handle cross-drive exceptions (`ValueError`) on Windows.

@@ -1,3 +1,4 @@
+import uuid
 
 import unittest
 from unittest.mock import patch
@@ -12,7 +13,7 @@ from app.auth import get_password_hash
 from datetime import datetime, timezone
 
 # Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -32,6 +33,9 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
+        import sys
+        if 'app.main' in sys.modules:
+            sys.modules['app.main'].engine = engine
         self.client = TestClient(app)
 
         # Create users

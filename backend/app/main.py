@@ -78,15 +78,29 @@ if os.path.exists(frontend_dist):
     if os.path.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
+    from starlette.concurrency import run_in_threadpool
+
+    def _is_safe_file(safe_path: str, frontend_dist: str) -> bool:
+        try:
+            # Prevent path traversal vulnerabilities by enforcing strict boundary check using commonpath
+            # instead of insecure string prefix matching (startswith).
+            if os.path.commonpath([os.path.abspath(safe_path), os.path.abspath(frontend_dist)]) != os.path.abspath(frontend_dist):
+                return False
+        except ValueError:
+            # Handle edge cases where paths are on different drives on Windows
+            return False
+
+        return os.path.exists(safe_path) and os.path.isfile(safe_path)
+
     # 2. Catch-all route (must be last)
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
-        # Protected file serving (prevent path traversal)
         safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
-            return FileResponse(os.path.join(frontend_dist, "index.html"))
 
-        if os.path.exists(safe_path) and os.path.isfile(safe_path):
+        # Offload synchronous filesystem checks to a thread pool to avoid blocking the event loop
+        is_safe = await run_in_threadpool(_is_safe_file, safe_path, frontend_dist)
+
+        if is_safe:
             return FileResponse(safe_path)
 
         return FileResponse(os.path.join(frontend_dist, "index.html"))
