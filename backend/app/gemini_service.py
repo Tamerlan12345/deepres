@@ -151,7 +151,7 @@ graph TD;
                         print(f"Warning: Error during polling for report {report_id}: {e}. Retrying...")
                         import traceback
                         traceback.print_exc()
-                        await append_log(db, report_id, f"Ошибка связи с API, повторная попытка... ({e})", "retrying")
+                        await append_log(db, report_id, f"Ошибка связи с API, повторная попытка...", "retrying")
                         continue
 
                     # Check 'state' (standard) or 'status' (fallback/user specified)
@@ -213,9 +213,9 @@ graph TD;
             await db.commit()
 
         except Exception as e:
-            # Log error
+            # Log error internally but return generic error to avoid information leakage
             print(f"Error processing report {report_id}: {e}")
-            await append_log(db, report_id, f"Критическая ошибка: {str(e)}", "failed")
+            await append_log(db, report_id, f"Критическая ошибка: произошла внутренняя ошибка сервера", "failed")
             report.status = ReportStatus.FAILED
-            report.result_json = {"error": str(e)}
+            report.result_json = {"error": "An internal server error occurred while processing the report."}
             await db.commit()
