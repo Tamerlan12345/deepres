@@ -12,14 +12,21 @@ from app.auth import get_password_hash
 from datetime import datetime, timezone
 import html
 
+import uuid
+import sys
+
 # Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
+
+if 'app.main' in sys.modules:
+    sys.modules['app.main'].engine = engine
+
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
 async def override_get_db():
