@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2024-10-24 - Path Traversal bypass via startswith Check
+**Vulnerability:** The SPA file server endpoint used `path.startswith(frontend_dist)` to prevent path traversal. This check could be bypassed by a directory sibling starting with the same prefix (e.g., `dist_secret.txt` for `dist`).
+**Learning:** Checking prefixes with `startswith` for security paths does not safely enforce directory confinement.
+**Prevention:** Always use `os.path.commonpath` with absolute paths, and catch `ValueError` to handle cross-drive issues properly.
