@@ -17,3 +17,7 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+## 2026-02-25 - Path Traversal in Catch-all Route Using `startswith()`
+**Vulnerability:** In `backend/app/main.py`, the fallback route `/{full_path:path}` used `.startswith()` to check if a resolved file path resides inside the target `frontend_dist` directory. This permitted path traversal by allowing prefixes like `frontend_dist_backup`.
+**Learning:** Checking directory boundaries with string matching operations like `startswith` is fundamentally insecure for file paths. Always use path-aware logic like `os.path.commonpath`.
+**Prevention:** File path boundary validation must always use `os.path.commonpath` on absolute paths (e.g., converted via `os.path.abspath`), taking care to catch `ValueError` cases like mismatched drives on Windows.
