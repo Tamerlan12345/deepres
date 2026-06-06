@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-25 - Path Traversal in Catch-all SPA Route
+**Vulnerability:** The `/{full_path:path}` catch-all route in `backend/app/main.py` used `safe_path.startswith(frontend_dist)` to prevent path traversal. This allows attackers to access sibling directories sharing the same prefix (e.g., `dist_secret` when the intended directory is `dist`).
+**Learning:** `startswith` is insufficient for path boundary validation because it acts on strings rather than semantic path components. `os.path.commonpath` correctly resolves the semantic hierarchy.
+**Prevention:** Always use `os.path.commonpath([base_dir, target_path]) == base_dir` (on absolute paths) instead of `startswith` to validate path bounds securely.
