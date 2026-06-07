@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-24 - Missing Length Validation on Pydantic String Fields
+**Vulnerability:** String fields (`username`, `password`, `query`) in Pydantic schemas lacked `max_length` constraints, which could be exploited for Resource Exhaustion / DoS attacks (e.g., forcing the server to hash extremely long passwords or process massive strings).
+**Learning:** Simply typing fields as `str` in Pydantic is not enough. Explicit constraints must be applied to user-controlled string inputs to prevent resource exhaustion attacks.
+**Prevention:** Always use `pydantic.Field` with explicit `max_length` (and `min_length` where appropriate) on all incoming string fields.
