@@ -82,8 +82,16 @@ if os.path.exists(frontend_dist):
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         # Protected file serving (prevent path traversal)
-        safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
+        frontend_dist_abs = os.path.abspath(frontend_dist)
+        safe_path = os.path.abspath(os.path.join(frontend_dist_abs, full_path))
+
+        try:
+            # os.path.commonpath prevents path traversal by ensuring the resolved path
+            # is strictly within the frontend_dist_abs directory.
+            if os.path.commonpath([safe_path, frontend_dist_abs]) != frontend_dist_abs:
+                return FileResponse(os.path.join(frontend_dist, "index.html"))
+        except ValueError:
+            # commonpath raises ValueError if paths are on different drives
             return FileResponse(os.path.join(frontend_dist, "index.html"))
 
         if os.path.exists(safe_path) and os.path.isfile(safe_path):
