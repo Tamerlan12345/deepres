@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/dompurify": "^3.2.0",
     "axios": "^1.6.0",
     "chart.js": "^4.5.1",
+    "dompurify": "^3.4.10",
     "keycloak-js": "^26.2.2",
     "lucide-react": "^0.292.0",
     "mermaid": "^11.12.2",

@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-25 - Stored XSS via Client-Side Mermaid Rendering
+**Vulnerability:** User input could contain malicious payload in Mermaid diagram code block. `mermaid.initialize` used `securityLevel: 'loose'`, and the resulting SVG was injected directly into the DOM using `dangerouslySetInnerHTML` without sanitization, leading to Stored XSS.
+**Learning:** Even client-side diagram rendering libraries like Mermaid can generate malicious SVGs containing `<script>` tags or `javascript:` URIs if configured loosely or fed malicious input.
+**Prevention:** Always initialize `mermaid` with `securityLevel: 'strict'` and explicitly sanitize the generated SVG using a library like DOMPurify before injecting it via `dangerouslySetInnerHTML`.
