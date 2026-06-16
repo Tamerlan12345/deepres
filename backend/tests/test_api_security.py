@@ -32,7 +32,8 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        self.client = TestClient(app)
+        self.client_cm = TestClient(app)
+        self.client = self.client_cm.__enter__()
 
         # Create users
         async with TestingSessionLocal() as db:
@@ -77,6 +78,7 @@ class TestApiSecurity(unittest.IsolatedAsyncioTestCase):
             self.report_id = report.id
 
     async def asyncTearDown(self):
+        self.client_cm.__exit__(None, None, None)
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
 
