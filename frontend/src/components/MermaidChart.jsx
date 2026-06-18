@@ -1,5 +1,6 @@
 import { useState, useEffect, memo } from 'react';
 import mermaid from 'mermaid';
+import DOMPurify from 'dompurify';
 
 const MermaidChart = memo(({ chart }) => {
     const [svg, setSvg] = useState('');
@@ -7,7 +8,7 @@ const MermaidChart = memo(({ chart }) => {
 
     useEffect(() => {
       mermaid.render(id, chart).then((result) => {
-          setSvg(result.svg);
+          setSvg(DOMPurify.sanitize(result.svg));
       }).catch(err => {
           console.error("Mermaid error:", err);
           setSvg(`<div class="text-error">Error rendering diagram</div>`);
