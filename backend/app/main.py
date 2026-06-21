@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 import os
 import secrets
 import string
+from starlette.concurrency import run_in_threadpool
 
 app = FastAPI(title="Deep Research Agent API")
 
@@ -82,12 +83,24 @@ if os.path.exists(frontend_dist):
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         # Protected file serving (prevent path traversal)
-        safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
+        # Using abspath and commonpath to securely verify directory boundaries
+        target_path = os.path.abspath(os.path.join(frontend_dist, full_path))
+        abs_frontend_dist = os.path.abspath(frontend_dist)
+
+        try:
+            # os.path.commonpath prevents bypasses like matching prefixes (e.g. /dist-secrets)
+            if os.path.commonpath([target_path, abs_frontend_dist]) != abs_frontend_dist:
+                return FileResponse(os.path.join(frontend_dist, "index.html"))
+        except ValueError:
+            # Handles edge cases such as different drives on Windows
             return FileResponse(os.path.join(frontend_dist, "index.html"))
 
-        if os.path.exists(safe_path) and os.path.isfile(safe_path):
-            return FileResponse(safe_path)
+        # Offload blocking IO operations to threadpool to avoid blocking event loop
+        exists = await run_in_threadpool(os.path.exists, target_path)
+        is_file = await run_in_threadpool(os.path.isfile, target_path)
+
+        if exists and is_file:
+            return FileResponse(target_path)
 
         return FileResponse(os.path.join(frontend_dist, "index.html"))
 
