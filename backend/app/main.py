@@ -82,14 +82,19 @@ if os.path.exists(frontend_dist):
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         # Protected file serving (prevent path traversal)
-        safe_path = os.path.normpath(os.path.join(frontend_dist, full_path))
-        if not safe_path.startswith(frontend_dist):
-            return FileResponse(os.path.join(frontend_dist, "index.html"))
+        abs_frontend_dist = os.path.abspath(frontend_dist)
+        safe_path = os.path.abspath(os.path.join(abs_frontend_dist, full_path))
+
+        try:
+            if os.path.commonpath([abs_frontend_dist, safe_path]) != abs_frontend_dist:
+                return FileResponse(os.path.join(abs_frontend_dist, "index.html"))
+        except ValueError:
+            return FileResponse(os.path.join(abs_frontend_dist, "index.html"))
 
         if os.path.exists(safe_path) and os.path.isfile(safe_path):
             return FileResponse(safe_path)
 
-        return FileResponse(os.path.join(frontend_dist, "index.html"))
+        return FileResponse(os.path.join(abs_frontend_dist, "index.html"))
 
 if __name__ == "__main__":
     import uvicorn
