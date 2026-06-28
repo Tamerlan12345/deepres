@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-06-28 - Path Traversal via Insecure Prefix Matching
+**Vulnerability:** The SPA catch-all route `/{full_path:path}` used `safe_path.startswith(frontend_dist)` for directory boundary checking. This allowed directory traversal if an attacker accessed files in a directory sharing the same prefix as `frontend_dist` (e.g., `dist_secret` when `frontend_dist` is `dist`), such as querying `../dist_secret/secret.txt`.
+**Learning:** `str.startswith()` is string-based and inadequate for checking file paths, as it evaluates exact prefixes rather than strict directory containment, creating security bypass opportunities for directories with shared prefixes.
+**Prevention:** Use `os.path.commonpath([os.path.abspath(base_dir), os.path.abspath(target_path)]) == os.path.abspath(base_dir)` to securely validate that a resolved path is strictly contained within the intended base directory. Ensure to catch `ValueError` specifically on Windows where `commonpath` raises it for paths on different drives.
