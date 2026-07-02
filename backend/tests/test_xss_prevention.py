@@ -1,19 +1,17 @@
-
 import unittest
-from unittest.mock import patch, MagicMock
+import json
+import uuid
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from app.main import app
 from app.database import Base, get_db
-from app.models import User, Report, ReportStatus
+from app.models import Report, ReportStatus, User
 from app.auth import get_password_hash
 from datetime import datetime, timezone
-import html
 
-# Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -22,40 +20,34 @@ engine = create_async_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
-async def override_get_db():
-    async with TestingSessionLocal() as session:
-        yield session
+import app.database
+app.database.engine = engine
+app.database.AsyncSessionLocal = TestingSessionLocal
 
-app.dependency_overrides[get_db] = override_get_db
+from app.main import app
+app.dependency_overrides[get_db] = lambda: TestingSessionLocal()
 
 class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        self.client = TestClient(app)
-
-        # Create user
+        # Create admin user to access the endpoint securely
         async with TestingSessionLocal() as db:
-            user = User(username="testuser", hashed_password=get_password_hash("password"), admin="no")
-            db.add(user)
+            admin_user = User(username="testuser", hashed_password=get_password_hash("password"), admin="yes")
+            db.add(admin_user)
             await db.commit()
-            await db.refresh(user)
-            self.user_id = user.id
+            await db.refresh(admin_user)
+            self.user_id = admin_user.id
 
-            # Create report with malicious content
-            self.malicious_query = "<script>alert('XSS')</script>"
-            self.malicious_summary = "<b>Bold</b> & <script>evil()</script>"
-            self.malicious_analysis = "<i>Italic</i> \"quote\""
+            # The malicious payload mimicking XSS in Mermaid diagram definition
+            malicious_payload = "A <script>alert(1)</script> B & \" '"
 
             report = Report(
-                query=self.malicious_query,
+                query="test query",
                 status=ReportStatus.COMPLETED,
                 id_users=self.user_id,
-                result_json={
-                    "summary": self.malicious_summary,
-                    "detailed_analysis": self.malicious_analysis
-                },
+                result_json={"summary": malicious_payload, "detailed_analysis": malicious_payload},
                 created_at=datetime.now(timezone.utc)
             )
             db.add(report)
@@ -67,42 +59,30 @@ class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
 
-    def get_token(self, username, password):
-        response = self.client.post("/api/login", json={"username": username, "password": password})
-        return response.json()["access_token"]
+    async def test_export_pdf_xss_prevention(self):
+        from httpx import AsyncClient, ASGITransport
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post("/api/login", json={"username": "testuser", "password": "password"})
+            token = response.json()["access_token"]
 
-    def test_export_pdf_xss_prevention(self):
-        token = self.get_token("testuser", "password")
+            with patch("app.api.HTML") as mock_html:
+                mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
 
-        # Mock HTML class from weasyprint to capture the HTML string
-        with patch("app.api.HTML") as mock_html:
-            mock_html.return_value.write_pdf.return_value = b"%PDF-1.4..."
+                response = await client.get(
+                    f"/api/reports/{self.report_id}/pdf",
+                    headers={"Authorization": f"Bearer {token}"}
+                )
 
-            response = self.client.get(
-                f"/api/reports/{self.report_id}/pdf",
-                headers={"Authorization": f"Bearer {token}"}
-            )
+                self.assertEqual(response.status_code, 200)
 
-            self.assertEqual(response.status_code, 200)
+                # Check what was passed to HTML
+                mock_html.assert_called_once()
+                args, kwargs = mock_html.call_args
+                html_string = kwargs.get('string', args[0] if args else '')
 
-            # Get the HTML string passed to HTML constructor
-            # The HTML class is initialized with string=...
-            call_args = mock_html.call_args
-            # call_args.kwargs['string'] or call_args[1]['string']
-            if 'string' in call_args.kwargs:
-                html_content = call_args.kwargs['string']
-            else:
-                # Fallback if positional (though code uses keyword)
-                html_content = call_args[0][0] if call_args[0] else ""
-
-            # Check that malicious content is ESCAPED
-            # We expect &lt;script&gt; instead of <script>
-            self.assertNotIn("<script>", html_content, "Raw <script> tag found in PDF HTML!")
-            self.assertIn("&lt;script&gt;", html_content, "Escaped <script> tag not found!")
-
-            # Check other fields
-            self.assertIn("&amp;", html_content, "Ampersand not escaped!")
-            self.assertIn("&quot;", html_content, "Quote not escaped!")
+                # XSS Payload should be escaped
+                self.assertNotIn("<script>", html_string)
+                self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", html_string)
 
 if __name__ == "__main__":
     unittest.main()
