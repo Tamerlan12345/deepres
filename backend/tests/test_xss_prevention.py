@@ -1,42 +1,48 @@
-
 import unittest
+import uuid
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from app.main import app
+import app.main
 from app.database import Base, get_db
 from app.models import User, Report, ReportStatus
 from app.auth import get_password_hash
 from datetime import datetime, timezone
 import html
 
-# Setup in-memory database
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-engine = create_async_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
-
-async def override_get_db():
-    async with TestingSessionLocal() as session:
-        yield session
-
-app.dependency_overrides[get_db] = override_get_db
-
 class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        async with engine.begin() as conn:
+        # Create a unique database URL for this test suite
+        db_url = f"sqlite+aiosqlite:///:memory:?cache=shared&v={uuid.uuid4().hex}"
+        self.engine = create_async_engine(
+            db_url,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+        self.TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine, class_=AsyncSession)
+
+        async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        self.client = TestClient(app)
+        async def override_get_db():
+            async with self.TestingSessionLocal() as session:
+                yield session
+
+        app.main.app.dependency_overrides[get_db] = override_get_db
+
+        # Replace app database globals to prevent cross-test interference
+        import app.database
+        self.original_engine = app.database.engine
+        self.original_sessionmaker = app.database.AsyncSessionLocal
+        app.database.engine = self.engine
+        app.database.AsyncSessionLocal = self.TestingSessionLocal
+
+        self.client = TestClient(app.main.app)
 
         # Create user
-        async with TestingSessionLocal() as db:
+        async with self.TestingSessionLocal() as db:
             user = User(username="testuser", hashed_password=get_password_hash("password"), admin="no")
             db.add(user)
             await db.commit()
@@ -64,8 +70,13 @@ class TestXSSPrevention(unittest.IsolatedAsyncioTestCase):
             self.report_id = report.id
 
     async def asyncTearDown(self):
-        async with engine.begin() as conn:
+        async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
+
+        import app.database
+        app.database.engine = self.original_engine
+        app.database.AsyncSessionLocal = self.original_sessionmaker
+        app.main.app.dependency_overrides.clear()
 
     def get_token(self, username, password):
         response = self.client.post("/api/login", json={"username": username, "password": password})
