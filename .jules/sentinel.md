@@ -17,3 +17,8 @@
 **Vulnerability:** The application automatically created a default admin user with hardcoded credentials (`admin:admin`) during startup if it didn't exist.
 **Learning:** Seeding logic in `on_event("startup")` can be a hidden source of critical vulnerabilities if it uses insecure defaults that persist into production.
 **Prevention:** Ensure all seeding logic uses environment variables for sensitive data or generates secure random values if not provided. Log warnings for generated credentials.
+
+## 2026-02-25 - Path Traversal in Catch-All SPA Route
+**Vulnerability:** The catch-all SPA route in FastAPI used `startswith()` to validate paths, which does not securely prevent path traversal, allowing access to files outside the intended frontend dist directory.
+**Learning:** `os.path.normpath` followed by `.startswith()` is insufficient for security as `../` resolution combined with prefix checking can lead to vulnerabilities (e.g. `../dist_secrets/test` starts with `/app/frontend/dist` but represents a different directory structure).
+**Prevention:** Always use `os.path.commonpath` with absolute paths (`os.path.abspath`) to verify that the target path is strictly contained within the base directory boundary, handling `ValueError` for cross-drive cases.
